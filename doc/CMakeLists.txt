@@ -1,0 +1,11 @@
+OPTION(NEMO_DOC_BUILD "Build NeMo documentation" OFF)
+IF(NEMO_DOC_BUILD)
+	MESSAGE(STATUS "Adding doc folders")
+	SUBDIRS(man)
+	SUBDIRS(api_html)
+	SUBDIRS(dev_html)
+	IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/manual/CMakeLists.txt)
+		# No LaTeX build in the source package,
+		SUBDIRS(manual)
+	ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/manual/CMakeLists.txt)
+ENDIF(NEMO_DOC_BUILD)

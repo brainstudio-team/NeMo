@@ -1,0 +1,4 @@
+#you may change graphic to other lab machines name
+foreach i ( `seq -w 1 10` )
+   ping -c 1 -w 1 graphic$i >/dev/null || echo "ray$i is off-line"
+end

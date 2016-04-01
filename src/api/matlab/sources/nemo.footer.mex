@@ -1,0 +1,11 @@
+
+void
+mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
+{
+	/* The first argument specifies the function */
+	uint32_t fn_idx = scalar<uint32_t, uint32_t>(prhs[0]);
+	if(fn_idx >= FN_COUNT || fn_idx < 0) {
+		mexErrMsgIdAndTxt("nemo:mex", "Unknown function index %u", fn_idx);
+	}
+	fn_arr[fn_idx](nlhs, plhs, nrhs, prhs);
+}

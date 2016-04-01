@@ -1,0 +1,24 @@
+#ifndef NEMO_CUDA_GLOBAL_QUEUE_CU_H
+#define NEMO_CUDA_GLOBAL_QUEUE_CU_H
+
+/*! \file globalQueue.cu_h Global queue */
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of nemo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <cuda_runtime.h>
+
+/*! The global queue contains synapse warp indices */
+typedef unsigned gq_entry_t;
+
+/*! Set the global queue pitch, i.e. the number of words in each source/target
+ * partition-specific queue */
+__host__ cudaError setGlobalQueuePitch(size_t wordPitch);
+
+#endif

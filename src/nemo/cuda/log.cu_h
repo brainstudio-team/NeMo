@@ -1,0 +1,97 @@
+#ifndef NEMO_CUDA_LOG_HPP
+#define NEMO_CUDA_LOG_HPP
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of nemo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifdef NEMO_CUDA_DEBUG_TRACE
+
+#include <stdlib.h>
+#include <nemo/config.h>
+#include <nemo/internal_types.h>
+
+/* Debugging trace/log in device code
+ *
+ * Two macros are provided
+ *		DEBUG_MSG(format, ...)
+ *			prints the message regardless of thread
+ *		DEBUG_THREAD_MSG(tix, format, ...)
+ *			prints the message only for thread 'tix'
+ *
+ * Before using these macros the function initLog should be called. After last
+ * use endLog should be called. To flush print buffers call flushLog.
+ */
+
+
+/* For logging we often need to print the current cycle number. To avoid
+ * passing this around as an extra parameter (which would either be
+ * conditionally compiled, or be a source of unused parameter warnings), we
+ * just use a global shared variable. */
+__shared__ uint32_t s_cycle;
+
+#ifdef __DEVICE_EMULATION__
+#	include <stdio.h>
+#	define DEBUG_MSG(...) fprintf(stderr, __VA_ARGS__)
+#else // __DEVICE_EMULATION__
+#	if __CUDA_ARCH__ >= 200
+#		include <stdio.h>
+		/* Just use the built-in printing facilities */
+#		define DEBUG_MSG(...) printf(__VA_ARGS__)
+#	else // __CUDA_ARCH__ >= 200
+#		ifdef HAVE_CUPRINTF
+#			include <cuPrintf.cu>
+#			define DEBUG_MSG(...) cuPrintf(__VA_ARGS__)
+#		else // HAVE_CUPRINTF
+#			ifdef __CUDA_ARCH__
+#				error "cuPrintf not available (and not in emulation mode)"
+#			else
+				/* This should never be required, but we need the macro to be
+				 * defined for the non-device compilation pass */
+#				define DEBUG_MSG(...)
+#			endif
+#		endif // HAVE_CUPRINTF
+#	endif // __CUDA_ARCH__ >= 200
+#endif // __DEVICE_EMULATION__
+
+#define DEBUG_THREAD_MSG(tix, ...)                                            \
+    if(threadIdx.x == tix) {                                                  \
+        DEBUG_MSG(__VA_ARGS__);                                               \
+    }
+
+
+#if NEMO_CUDA_DEBUG_TRACE & 0x2
+#define DEBUG_MSG_NEURON(...) DEBUG_MSG(__VA_ARGS__)
+#else
+#define DEBUG_MSG_NEURON(...)
+#endif
+
+#if NEMO_CUDA_DEBUG_TRACE & 0x4
+#define DEBUG_MSG_SYNAPSE(...) DEBUG_MSG(__VA_ARGS__)
+#else
+#define DEBUG_MSG_SYNAPSE(...)
+#endif
+
+#if NEMO_CUDA_DEBUG_TRACE >= 0x8
+#define DEBUG_MSG_STDP(...) DEBUG_MSG(__VA_ARGS__)
+#else
+#define DEBUG_MSG_STDP(...)
+#endif
+
+#else // NEMO_CUDA_DEBUG_TRACE
+
+#define DEBUG_MSG(msg, ...)
+#define DEBUG_THREAD_MSG(msg, ...)
+
+#define DEBUG_MSG_NEURON(...)
+#define DEBUG_MSG_SYNAPSE(...)
+#define DEBUG_MSG_STDP(...)
+
+#endif // NEMO_CUDA_DEBUG_TRACE
+
+#endif // NEMO_CUDA_LOG_HPP

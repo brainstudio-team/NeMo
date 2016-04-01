@@ -1,0 +1,31 @@
+#ifndef BIT_VECTOR_CU_H
+#define BIT_VECTOR_CU_H
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of nemo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* Simple operations on shared memory per-neuron bit-vectors 
+ *
+ * This provides a very compact storage format, as only a single bit is used
+ * for each neuron. However, setting elements of the vector incurs some
+ * overhead since per-word atomicity must be enforced.
+ *
+ * The base type of the bit-vector should match the native word size on the
+ * device. For all current devices this is 32b, but this may change in the
+ * future */
+
+/* The size is fixed for all bit-vectors. They should be small regardless of
+ * the partition size, so no point dealing with variable pitch here */
+
+#include "kernel.cu_h"
+
+#define BV_BYTE_PITCH (MAX_PARTITION_SIZE/8)
+#define BV_WORD_PITCH (MAX_PARTITION_SIZE/32)
+
+#endif

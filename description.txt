@@ -1,0 +1,4 @@
+NeMo is a high-performance spiking neural network simulator
+which simulates networks of Izhikevich neurons on CUDA-
+enabled GPUs. NeMo is a C++ class library, with additional
+interfaces for pure C, Python, and Matlab.

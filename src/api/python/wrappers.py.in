@@ -1,0 +1,342 @@
+import sys
+import warnings
+
+sys.path.append('@CMAKE_INSTALL_PREFIX@/@INSTALL_DIR@')
+# from _nemo import *
+import _nemo as _n
+
+_n.init()
+
+def deprecated(func):
+    """This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emitted
+    when the function is used."""
+    def new_func(*args, **kwargs):
+        warnings.warn("Call to deprecated function %s." % func.__name__,
+                      category=DeprecationWarning)
+        return func(*args, **kwargs)
+    new_func.__name__ = func.__name__
+    new_func.__doc__ = func.__doc__
+    new_func.__dict__.update(func.__dict__)
+    return new_func
+
+
+	
+
+# _n.Simulation.step = step
+
+
+class Configuration:
+
+    def __init__(self):
+        self._conf = _n.Configuration() 
+
+    def set_stdp_function(self, prefire, postfire, minWeight, maxWeight):
+        return self._conf.set_stdp_function(prefire, postfire, minWeight, maxWeight)
+
+    def set_cuda_backend(self, deviceNumber):
+        return self._conf.set_cuda_backend(deviceNumber)
+
+    def set_cpu_backend(self):
+        return self._conf.set_cpu_backend()
+
+    def backend_description(self):
+        return self._conf.backend_description()
+
+    __doc__ = _n.Configuration.__doc__
+    set_stdp_function.__doc__ = _n.Configuration.set_stdp_function.__doc__
+    set_cuda_backend.__doc__ = _n.Configuration.set_cuda_backend.__doc__
+    set_cpu_backend.__doc__ = _n.Configuration.set_cpu_backend.__doc__
+    backend_description.__doc__ = _n.Configuration.backend_description.__doc__
+
+
+class Network():
+
+    def __init__(self):
+        self._net = _n.Network()
+
+    def add_neuron_type(self, name):
+
+        if not hasattr(self, 'includedTypes'):
+            res = self._net.add_neuron_type(name)
+            self.includedTypes = {res: name, name: res} # Keep a bijective dictionary for later
+        else:
+            if name in self.includedTypes.keys():
+                res = self.includedTypes[name]
+            else:
+                res = self._net.add_neuron_type(name)
+                self.includedTypes[res] = name
+                self.includedTypes[name] = res	
+
+        return res
+
+
+    def add_neuron(self, neuron_type, neuron_idx, paramDict=None, stateDict=None):
+        """
+        Add one or more neurons to the network.
+
+        Inputs:
+        neuron_type -- Integer coding the type of the neuron(s). See Network.add_neuron_type.
+        neuron_idx -- Neuron index.
+        paramDict -- Dictionary of named neuron parameters. See NeMo manual.
+        stateDict -- Dictionary of named neuron state variables. See NeMo manual.
+        """
+        try:
+            if neuron_type not in self.includedTypes:
+                raise RuntimeError('That neuron type is not in this network. Use add_neuron_type first.')
+                    
+        except AttributeError:
+            raise RuntimeError('No neuron types in this network. Use add_neuron_type first.')
+
+
+        if self.includedTypes[neuron_type] == 'Izhikevich':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['a'], paramDict['b'], paramDict['c'], \
+                    paramDict['d'], paramDict['sigma'], stateDict['u'], stateDict['v'])
+
+        elif self.includedTypes[neuron_type] == 'Izhikevich2007DopSyn':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['a'], paramDict['b'], paramDict['c'], \
+                    paramDict['d'], paramDict['vpeak'], paramDict['Vr'], paramDict['Vt'], paramDict['k'], \
+                    paramDict['Cm'], paramDict['sigma'], paramDict['d1'], paramDict['d2'], \
+                    paramDict['tMdtOt_exc'], paramDict['G_exc'], paramDict['E_exc'], \
+                    paramDict['tMdtOt_inh'], paramDict['G_inh'], paramDict['E_inh'], \
+                    stateDict['v'], stateDict['u'], stateDict['ge'], stateDict['gi'])
+
+        elif self.includedTypes[neuron_type] == 'Izhikevich2007':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['a'], paramDict['b'], paramDict['c'], \
+                    paramDict['d'], paramDict['vpeak'], paramDict['Vr'], paramDict['Vt'], paramDict['k'], \
+                    paramDict['Cm'], paramDict['sigma'], \
+                    paramDict['tMdtOt_exc'], paramDict['G_exc'], paramDict['E_exc'], \
+                    paramDict['tMdtOt_inh'], paramDict['G_inh'], paramDict['E_inh'], \
+                    stateDict['v'], stateDict['u'], stateDict['ge'], stateDict['gi'])
+
+        elif self.includedTypes[neuron_type] == 'IF_curr_exp':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['v_rest'], paramDict['v_reset'], \
+                    paramDict['c_m'], paramDict['tau_m'], paramDict['tau_refrac'], paramDict['tau_synE'], \
+                    paramDict['tau_synI'], paramDict['v_thresh'], paramDict['I_offset'], \
+                    stateDict['v'], stateDict['ie'], stateDict['ii'], stateDict['lastfired'])
+
+        elif self.includedTypes[neuron_type] == 'Input' or self.includedTypes[neuron_type] == 'InhomogeneousPoissonSource':
+            self._net.add_neuron(neuron_type, neuron_idx)
+
+        elif self.includedTypes[neuron_type] == 'PoissonSource':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['lambda'])
+
+        elif self.includedTypes[neuron_type] == 'Kuramoto':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['omega'], paramDict['Cmean'], stateDict['theta'])
+
+        elif self.includedTypes[neuron_type] == 'KuramotoLag' or self.includedTypes[neuron_type] == 'KuramotoLagFloat':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['omega'], paramDict['Cmean'], \
+                    paramDict['alpha'], stateDict['theta'])
+
+        elif self.includedTypes[neuron_type] == 'IF_lin':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['c_m'], paramDict['tau_refrac'], \
+                    paramDict['v_thresh'], paramDict['I_offset'], \
+                    stateDict['v'], stateDict['lastfired'])
+        # elif self.includedTypes[neuron_type] is 'IF_lin':
+        #	self._net.add_neuron(neuron_type, neuron_idx, paramDict['c_m'], paramDict['tau_refrac'], \
+        #		paramDict['v_thresh'], paramDict['I_offset'], \
+        #		stateDict['v'], stateDict['ie'], stateDict['ii'], stateDict['lastfired'])
+
+        else:
+            # FIXME : this message doesn't print, so the user gets an unexplained error
+            #print "WARNING!! You are trying to add a neuron type not considered in the Python API for NeMo version @NEMO_VERSION@. \
+            #	Weird things can happen. Go to <nemo_root>/src/api/python/wrappers.py and write your add_neuron method."
+            argList = paramDict.values() + stateDict.values()
+            self._net.add_neuron(neuron_type, neuron_idx, *argList)
+
+
+    def add_synapse(self, source, target, delay, weight, plastic):
+        return self._net.add_synapse(source, target, delay, weight, plastic)
+
+    def set_neuron(self, *args, **kwargs):
+        return self._net.set_neuron(*args, **kwargs)
+
+    def get_neuron_state(self, *args, **kwargs):
+        return self._net.get_neuron_state(*args, **kwargs)
+
+    def get_neuron_parameter(self, *args, **kwargs):
+        return self._net.get_neuron_parameter(*args, **kwargs)
+
+    def set_neuron_state(self, *args, **kwargs):
+        return self._net.set_neuron_state(*args, **kwargs)
+
+    def set_neuron_parameter(self, *args, **kwargs):
+        return self._net.set_neuron_parameter(*args, **kwargs)
+
+    def get_synapse_source(self, *args, **kwargs):
+        return self._net.get_synapse_source(*args, **kwargs)
+
+    def neuron_count(self, *args, **kwargs):
+        return self._net.neuron_count(*args, **kwargs)
+
+    def get_synapses_from(self, *args, **kwargs):
+        return self._net.get_synapses_from(*args, **kwargs)
+
+    def get_synapse_target(self, *args, **kwargs):
+        return self._net.get_synapse_target(*args, **kwargs)
+
+    def get_synapse_delay(self, *args, **kwargs):
+        return self._net.get_synapse_delay(*args, **kwargs)
+
+    def get_synapse_weight(self, *args, **kwargs):
+        return self._net.get_synapse_weight(*args, **kwargs)
+
+    def get_synapse_plastic(self, *args, **kwargs):
+        return self._net.get_synapse_plastic(*args, **kwargs)
+
+    __doc__ = _n.Network.__doc__
+    add_neuron_type.__doc__ = _n.Network.add_neuron_type.__doc__
+    add_synapse.__doc__ = _n.Network.add_synapse.__doc__
+    set_neuron.__doc__ = _n.Network.set_neuron.__doc__
+    get_neuron_state.__doc__ = _n.Network.get_neuron_state.__doc__
+    get_neuron_parameter.__doc__ = _n.Network.get_neuron_parameter.__doc__
+    set_neuron_state.__doc__ = _n.Network.set_neuron_state.__doc__
+    set_neuron_parameter.__doc__ = _n.Network.set_neuron_parameter.__doc__
+    get_synapse_source.__doc__ = _n.Network.get_synapse_source.__doc__
+    neuron_count.__doc__ = _n.Network.neuron_count.__doc__
+    get_synapses_from.__doc__ = _n.Network.get_synapses_from.__doc__
+    get_synapse_target.__doc__ = _n.Network.get_synapse_target.__doc__
+    get_synapse_delay.__doc__ = _n.Network.get_synapse_delay.__doc__
+    get_synapse_weight.__doc__ = _n.Network.get_synapse_weight.__doc__
+    get_synapse_plastic.__doc__ = _n.Network.get_synapse_plastic.__doc__
+
+
+class Simulation:
+
+    def __init__(self, net, conf):
+        self._sim = _n.Simulation(net._net, conf._conf)
+
+    def step_noinput(self):
+        """
+        run simulation for a single cycle (1ms)
+        """
+        return self._sim.step_noinput()
+
+    def step_f(self, fstim):
+        """
+        run simulation for a single cycle (1ms)
+    
+        Inputs:
+        fstim -- An optional list of neurons which will be forced to fire this cycle
+        """
+        return self._sim.step_f(fstim)
+
+    def step_i(self, istim):
+        """
+        run simulation for a single cycle (1ms)
+    
+        Inputs:
+        istim -- An optional list of neuron index/current pairs (tuples) for external stimulus of the network
+        """
+        return self._sim.step_i(istim)
+
+    def step_fi(self, fstim, istim):
+        """
+        run simulation for a single cycle (1ms)
+    
+        Inputs:
+        fstim -- An optional list of neurons which will be forced to fire this cycle
+        istim -- An optional list of neuron index/current pairs (tuples) for external stimulus of the network
+        """
+        return self._sim.step_fi(fstim, istim)
+
+    def step(self, fstim=None, istim=None):
+        """
+        run simulation for a single cycle (1ms)
+    
+        Inputs:
+        fstim -- An optional list of neurons which will be forced to fire this cycle
+        istim -- An optional list of neuron index/current pairs (tuples) for external stimulus of the network
+        """
+
+        firing_input = [fstim] if isinstance(fstim, int) else fstim
+
+        if istim:
+            if (not isinstance(istim[0], tuple)) or (len(istim[0])!=2):
+                raise ValueError('Current input must be specified as a list of (idx, I) pairs, e.g. [(idx1, I1), (idx2, I2), ...]')
+
+            if fstim is not None:
+                return self._sim.step_fi(firing_input, istim)
+            else:
+                return self._sim.step_i(istim)
+
+        else:
+            if fstim is not None:
+                return self._sim.step_f(firing_input)
+            else:
+                return self._sim.step_noinput()
+
+    
+    def propagate(self, *args, **kwargs):
+        return self._sim.propagate(*args, **kwargs)
+
+    def apply_stdp(self, *args, **kwargs):
+        return self._sim.apply_stdp(*args, **kwargs)
+
+    def set_neuron(self, *args, **kwargs):
+        return self._sim.set_neuron(*args, **kwargs)
+
+    def get_neuron_state(self, idx, varno):
+        return self._sim.get_neuron_state(idx, varno)
+
+    def get_neuron_parameter(self, idx, varno):
+        return self._sim.get_neuron_parameter(idx, varno)
+    
+    def set_neuron_state(self, idx, varno, val):
+        return self._sim.set_neuron_state(idx, varno, val)
+    
+    def set_neuron_parameter(self, idx, varno, val):
+        return self._sim.set_neuron_parameter(idx, varno, val)
+
+    def get_membrane_potential(self, idx):
+        return self._sim.get_membrane_potential(idx)
+
+    def get_synapses_from(self, source):
+        return self._sim.get_synapses_from(source)
+    
+    def get_synapse_source(self, synapse):
+        return self._sim.get_synapse_source(synapse)
+    
+    def get_synapse_target(self, synapse):
+        return self._sim.get_synapse_target(synapse)
+    
+    def get_synapse_delay(self, synapse):
+        return self._sim.get_synapse_delay(synapse)
+    
+    def get_synapse_weight(self, synapse):
+        return self._sim.get_synapse_weight(synapse)
+    
+    def get_synapse_plastic(self, synapse):
+        return self._sim.get_synapse_plastic(synapse)
+
+    def elapsed_wallclock(self):
+        return self._sim.elapsed_wallclock()
+
+    def elapsed_simulation(self):
+        return self._sim.elapsed_simulation()
+
+    def reset_timer(self):
+        return self._sim.reset_timer()
+
+    __doc__ = _n.Simulation.__doc__
+    try:
+        propagate.__doc__ = _n.Simulation.propagate.__doc__
+    except AttributeError:
+        pass
+    apply_stdp.__doc__ = _n.Simulation.apply_stdp.__doc__
+    set_neuron.__doc__ = _n.Simulation.set_neuron.__doc__
+    get_neuron_state.__doc__ = _n.Simulation.get_neuron_state.__doc__
+    get_neuron_parameter.__doc__ = _n.Simulation.get_neuron_parameter.__doc__
+    set_neuron_state.__doc__ = _n.Simulation.set_neuron_state.__doc__
+    set_neuron_parameter.__doc__ = _n.Simulation.set_neuron_parameter.__doc__
+    get_membrane_potential.__doc__ = _n.Simulation.get_membrane_potential.__doc__
+    get_synapses_from.__doc__ = _n.Simulation.get_synapses_from.__doc__
+    get_synapse_source.__doc__ = _n.Simulation.get_synapse_source.__doc__
+    get_synapse_target.__doc__ = _n.Simulation.get_synapse_target.__doc__
+    get_synapse_delay.__doc__ = _n.Simulation.get_synapse_delay.__doc__
+    get_synapse_weight.__doc__ = _n.Simulation.get_synapse_weight.__doc__
+    get_synapse_plastic.__doc__ = _n.Simulation.get_synapse_plastic.__doc__
+    elapsed_wallclock.__doc__ = _n.Simulation.elapsed_wallclock.__doc__
+    elapsed_simulation.__doc__ = _n.Simulation.elapsed_simulation.__doc__
+    reset_timer.__doc__ = _n.Simulation.reset_timer.__doc__
+

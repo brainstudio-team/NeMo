@@ -1,0 +1,35 @@
+#ifndef NEMO_CUDA_PARAMETERS_CU_H
+#define NEMO_CUDA_PARAMETERS_CU_H
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of NeMo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+/*! Global parameters */
+struct param_t {
+
+	unsigned fixedPointScale;
+	unsigned fixedPointFractionalBits;
+
+	unsigned maxDelay;
+
+	// per-neuron vector pitches
+	size_t pitch1;
+	size_t pitch32;
+	size_t pitch64;
+
+	/* Size (in words) of a single plane in the forward connectivity matrix,
+	 * i.e. all of the address data or all of the weights */
+	size_t fcmPlaneSize;
+
+	size_t outgoingPitch;
+	size_t outgoingStep;
+};
+
+#endif

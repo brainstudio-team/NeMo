@@ -1,0 +1,145 @@
+#ifndef NEMO_CONFIG_H
+#define NEMO_CONFIG_H
+
+#cmakedefine HAVE_BUILTIN_CLZLL
+#cmakedefine HAVE_BUILTIN_CLZ
+#cmakedefine HAVE_BUILTIN_CTZLL
+#cmakedefine HAVE_LOG2
+#cmakedefine HAVE_POSIX_MEMALIGN
+#cmakedefine HAVE_CUPRINTF
+#cmakedefine NEMO_MPI_ENABLED
+#cmakedefine NEMO_MPI_DEBUG_TRACE
+#cmakedefine NEMO_MPI_DEBUG_TIMING
+#cmakedefine NEMO_MPI_COMMUNICATION_COUNTERS
+#cmakedefine NEMO_CUDA_ENABLED
+#cmakedefine NEMO_CUDA_DYNAMIC_LOADING
+#cmakedefine NEMO_CUDA_DEBUG_TRACE @NEMO_CUDA_DEBUG_TRACE@
+#cmakedefine NEMO_CUDA_DEVICE_ASSERTIONS
+#cmakedefine NEMO_CPU_DEBUG_TRACE
+#cmakedefine NEMO_CPU_OPENMP_ENABLED
+#cmakedefine NEMO_BRIAN_ENABLED
+#cmakedefine NEMO_WEIGHT_FIXED_POINT_SATURATION
+
+#cmakedefine NEMO_VERSION "@NEMO_VERSION@"
+#if defined _WIN32 || defined __CYGWIN__
+/* The system plugin directory is relative to the dll location */
+#cmakedefine NEMO_SYSTEM_PLUGIN_DIR "@NEMO_SYSTEM_PLUGIN_DIR@"
+#else
+#cmakedefine NEMO_SYSTEM_PLUGIN_DIR "@CMAKE_INSTALL_PREFIX@/@NEMO_SYSTEM_PLUGIN_DIR@"
+#endif
+#cmakedefine NEMO_USER_PLUGIN_DIR "@NEMO_USER_PLUGIN_DIR@"
+
+// PEDRO: hack to add Izhikevich2007DopSyn neuron type. Everything seems to
+// work fine now, I don't really know why this was here before
+// const unsigned NEMO_MAX_NEURON_ARGS = 16;
+const unsigned NEMO_MAX_NEURON_ARGS = 100;
+
+
+#if defined _WIN32 || defined __CYGWIN__
+  #ifdef NEMO_EXPORTS
+    #ifdef __GNUC__
+      #define NEMO_DLL_PUBLIC __attribute__((dllexport))
+    #else
+      #define NEMO_DLL_PUBLIC __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #else
+    #ifdef __GNUC__
+      #define NEMO_DLL_PUBLIC __attribute__((dllimport))
+    #else
+      #define NEMO_DLL_PUBLIC __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #endif
+#else
+  #define NEMO_DLL_PUBLIC
+  #define NEMO_DLL_LOCAL
+#endif
+
+#if defined _WIN32 || defined __CYGWIN__
+  #ifdef NEMO_BASE_EXPORTS
+    #ifdef __GNUC__
+      #define NEMO_BASE_DLL_PUBLIC __attribute__((dllexport))
+    #else
+      #define NEMO_BASE_DLL_PUBLIC __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #else
+    #ifdef __GNUC__
+      #define NEMO_BASE_DLL_PUBLIC __attribute__((dllimport))
+    #else
+      #define NEMO_BASE_DLL_PUBLIC __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #endif
+#else
+  #define NEMO_BASE_DLL_PUBLIC
+  #define NEMO_BASE_DLL_LOCAL
+#endif
+
+#if defined _WIN32 || defined __CYGWIN__
+  #ifdef NEMO_CUDA_EXPORTS
+    #ifdef __GNUC__
+      #define NEMO_CUDA_DLL_PUBLIC __attribute__((dllexport))
+    #else
+      #define NEMO_CUDA_DLL_PUBLIC __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #else
+    #ifdef __GNUC__
+      #define NEMO_CUDA_DLL_PUBLIC __attribute__((dllimport))
+    #else
+      #define NEMO_CUDA_DLL_PUBLIC __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #endif
+#else
+  #define NEMO_CUDA_DLL_PUBLIC
+  #define NEMO_CUDA_DLL_LOCAL
+#endif
+
+#if defined _WIN32 || defined __CYGWIN__
+  #ifdef NEMO_CPU_EXPORTS
+    #ifdef __GNUC__
+      #define NEMO_CPU_DLL_PUBLIC __attribute__((dllexport))
+    #else
+      #define NEMO_CPU_DLL_PUBLIC __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #else
+    #ifdef __GNUC__
+      #define NEMO_CPU_DLL_PUBLIC __attribute__((dllimport))
+    #else
+      #define NEMO_CPU_DLL_PUBLIC __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #endif
+#else
+  #define NEMO_CPU_DLL_PUBLIC
+  #define NEMO_CPU_DLL_LOCAL
+#endif
+
+#if defined _WIN32 || defined __CYGWIN__
+  #ifdef NEMO_PLUGIN_EXPORTS
+    #ifdef __GNUC__
+      #define NEMO_PLUGIN_DLL_PUBLIC __attribute__((dllexport))
+    #else
+      #define NEMO_PLUGIN_DLL_PUBLIC __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #else
+    #ifdef __GNUC__
+      #define NEMO_PLUGIN_DLL_PUBLIC __attribute__((dllimport))
+    #else
+      #define NEMO_PLUGIN_DLL_PUBLIC __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #endif
+#else
+  #define NEMO_PLUGIN_DLL_PUBLIC
+  #define NEMO_PLUGIN_DLL_LOCAL
+#endif
+
+#if defined(_WIN32) && (defined(NEMO_BASE_EXPORTS) || defined(NEMO_CUDA_EXPORTS) || defined(NEMO_CPU_EXPORTS) || defined(NEMO_PLUGIN_EXPORTS) || defined(NEMO_EXPORTS))
+/* Suppress useless warning about DLL exporting of template classes */
+#pragma warning(disable:4251)
+
+/* Suppress warnings about the great evils of the standard libraries */
+#pragma warning(disable:4996)
+
+/* Suppress warnings about non dll-interface class used as base for dll-interface class */
+#pragma warning(disable:4725)
+#endif
+
+
+#endif

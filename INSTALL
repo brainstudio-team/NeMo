@@ -1,0 +1,47 @@
+Build/installation
+------------------
+
+The build process uses cmake. Basic usage on UNIX:
+
+mkdir build
+cd build
+cmake ..
+make
+su
+make install
+
+To build on Windows using MSVC:
+
+- start cmake-gui
+- enter the source and target directories (these should be different)
+- configure
+- generate
+- open the resulting project file and build from within visual studio.
+
+Dependencies
+------------
+
+- CUDA toolkit >= 2.1 (SDK not required)
+- Boost
+- CMake (>= 2.8)
+
+Note that the CUDA compiler driver 'nvcc' is not compatible with all versions
+of gcc, especially newer versions of gcc.
+
+For Boost, mostly header-only libraries are required (shared_ptr, tuples,
+random, date_time), so a full install/build is generally not required. Note,
+however, that some versions of Visual C++ requires date_time to be compiled as
+a proper library. The date_time library is only required for simulation timing,
+and can be disabled in the cmake configuration stage.
+
+Usage
+-----
+
+The 'examples' directory contains an example network using the C++ API.
+
+On UNIX, the build process generates man pages. Check 'man 3 nemo' for an
+overview of the library, 'man 3 nemo-c' for C API reference and 'man 3
+nemo-cpp' for the C++ API reference.
+
+Andreas Fidjeland <andreas.fidjeland@imperial.ac.uk>
+April 2010

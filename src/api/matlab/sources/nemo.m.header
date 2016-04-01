@@ -1,0 +1,8 @@
+% To use the NeMo simulator:
+%
+% 1. Set any global configuration options, if desired
+% 2. Create a network piecemeal by adding neurons and synapses
+% 3. Create simulation and step through it.
+%
+% For example:
+%

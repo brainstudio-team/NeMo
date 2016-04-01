@@ -1,0 +1,113 @@
+#Usefull commands for building the Nemo MPI in different machines and environments with sudo access. Can be replaced by something more professional in the future.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ssh -X pr513@shell1.doc.ic.ac.uk -t ssh -X corona10
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++ <path_to_source>
+
+cd ~/Desktop && rm -rf NemoMpiBuild && mkdir NemoMpiBuild && cd NemoMpiBuild && cmake -DCMAKE_C_COMPILER=/usr/bin/mpicc -DCMAKE_CXX_COMPILER=/usr/bin/mpic++ -DCMAKE_INSTALL_PREFIX:PATH=~/Desktop/NemoMpiBuild ~/Desktop/nemompi && make && make install
+
+
+cd ~/Desktop && rm -rf NemoMpiBuild &&                                          \
+mkdir NemoMpiBuild &&                                                           \
+cd NemoMpiBuild &&                                                              \
+cmake -DCMAKE_C_COMPILER=/usr/bin/mpicc                                         \
+  -DCMAKE_CXX_COMPILER=/usr/bin/mpic++                                          \
+  -DCMAKE_INSTALL_PREFIX:PATH=~/Desktop/NemoMpiBuild                            \
+  -DBoost_NO_BOOST_CMAKE=TRUE                                                   \
+  -DBoost_NO_SYSTEM_PATHS=TRUE                                                  \
+  -DBOOST_ROOT=/vol/bitbucket/pr513/boost_1_55_0/                               \
+  -DBOOST_INCLUDEDIR=/vol/bitbucket/pr513/boost_1_55_0/boost                    \
+  -DBoost_LIBRARY_DIRS=/vol/bitbucket/pr513/boost_1_55_0/stage/lib              \
+  ~/Desktop/nemompi &&                                                          \
+make && make install
+
+cd ~/Desktop && rm -rf NemoMpiBuild &&                                          \
+mkdir NemoMpiBuild &&                                                           \
+cd NemoMpiBuild &&                                                              \
+cmake -DCMAKE_C_COMPILER=/usr/bin/mpicc                                         \
+  -DCMAKE_CXX_COMPILER=/usr/bin/mpic++                                          \
+  -DCMAKE_BUILD_TYPE=Debug                                                      \
+  -DCMAKE_INSTALL_PREFIX:PATH=~/Desktop/NemoMpiBuild                            \
+  -DBoost_NO_BOOST_CMAKE=TRUE                                                   \
+  -DBoost_NO_SYSTEM_PATHS=TRUE                                                  \
+  -DBOOST_ROOT=/vol/bitbucket/pr513/boost_1_55_0/                               \
+  -DBOOST_INCLUDEDIR=/vol/bitbucket/pr513/boost_1_55_0/boost                    \
+  -DBoost_LIBRARY_DIRS=/vol/bitbucket/pr513/boost_1_55_0/stage/lib              \
+  ~/Desktop/nemompi &&                                                          \
+make VERBOSE=1 && make install
+
+mpiexec -machinefile /homes/pr513/Desktop/nemompi/utilities/hosts.txt -np 5 ./share/nemo/examples/mpi_example 1000 500 1000 0 out.txt /homes/pr513/Desktop/nemompi/utilities/config.xml
+
+for host in `cat ~/Desktop/hosts` ; do xhost -$host ; done
+
+mpiexec -np 3 -machinefile ~/Desktop/hosts.txt ~/Desktop/NemoMpiBuild/src/share/examples/mpi_example 1000 100 1000 0 firings.txt ~/Desktop/nemompi/utilities/config.xml `pwd`/logs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+cd ~ && rm -rf NemoMpiBuild &&                                          		\
+mkdir NemoMpiBuild &&                                                           \
+cd NemoMpiBuild &&                                                              \
+cmake -DCMAKE_C_COMPILER=/usr/bin/mpicc                                         \
+  -DCMAKE_CXX_COMPILER=/usr/bin/mpic++                                          \
+  -DCMAKE_BUILD_TYPE=Debug                                                      \
+  -DCMAKE_INSTALL_PREFIX:PATH=~/NemoMpiBuild                            		\
+  ~/eclipse-workspace/Nemo-MPI &&                                               \
+make && make install
+
+cd ~ && rm -rf NemoMpiBuild &&                                          		\
+mkdir NemoMpiBuild &&                                                           \
+cd NemoMpiBuild &&                                                              \
+cmake -DCMAKE_C_COMPILER=/usr/bin/mpicc                                         \
+  -DCMAKE_CXX_COMPILER=/usr/bin/mpic++                                          \
+  -DCMAKE_BUILD_TYPE=Debug                                                      \
+  -DCMAKE_INSTALL_PREFIX:PATH=~/NemoMpiBuild                            		\
+  ~/eclipse-workspace/Nemo-MPI &&                                               \
+
+ make && make install && mpiexec -np 4 ./src/examples/mpi_example 1000 500 1000 0 firings.txt ~/eclipse-workspace/Nemo-MPI/utilities/config.xml "`pwd`/logs"
+
+make && make install && mpiexec -np 1 ./src/examples/mpi_example 1000 10000 1000 0 ./logs/nompi-out.txt ~/eclipse-workspace/Nemo-MPI/utilities/config.xml ./logs --nompi
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#CPU 
+mpiexec -machinefile ~/Desktop/nemompi/utilities/cpu-hosts.txt -np 5 ~/Desktop/NemoMpiBuild/share/nemo/examples/mpi_example 1000 100 1000 0 ~/Desktop/NemoMpiBuild/mpiout.txt /homes/pr513/Desktop/nemompi/utilities/config.xml ~/Desktop/NemoMpiBuild/logs
+
+#CUDA 
+mpiexec -machinefile ~/Desktop/nemompi/utilities/gpu-hosts.txt -np 5 ~/Desktop/NemoMpiBuild/share/nemo/examples/mpi_example 1000 1000 1000 0 ~/Desktop/NemoMpiBuild/mpiout.txt /homes/pr513/Desktop/nemompi/utilities/config.xml ~/Desktop/NemoMpiBuild/logs
+
+cd ~/Desktop/nemompi/utilities/ && ./benchmark.sh ~/Desktop/NemoMpiBuild/ ~/Desktop/nemompi/utilities/config.xml ~/Desktop/hosts.txt ~/Desktop/NemoMpiBuild/logs 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#Build boost log tutorial
+
+g++ -DBOOST_LOG_DYN_LINK log_tut.cpp -o test -lboost_log_setup -lboost_log -lboost_thread -lboost_system -pthread -lstdc++
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ldd ./src/mpi/libnemo_mpi.so
+
+objdump -tT /usr/lib/libboost_mpi.so | grep _ZNK5boost3mpi12communicatorcvi
+
+c++filt _ZNK5boost3mpi12communicatorcvi
+
+#Find where the undefined symbol is called
+objdump -rdS libnemo_mpi.so | grep _ZNK5boost3mpi12communicatorcviEv -A 5 -B 5
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\find ~/.mozilla/firefox -name lock -type l -exec rm {} \;
+\find ~/.mozilla/firefox -name .parentlock -size 0 -exec rm {} \;
+
+\rm -f ~/workspace/.metadata/.lock
+
+The Boost C++ Libraries were successfully built!
+
+The following directory should be added to compiler include paths:
+
+    /vol/bitbucket/pr513/boost_1_55_0
+
+The following directory should be added to linker library paths:
+
+    /vol/bitbucket/pr513/boost_1_55_0/stage/lib
+

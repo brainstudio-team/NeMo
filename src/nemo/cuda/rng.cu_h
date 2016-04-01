@@ -1,0 +1,21 @@
+#ifndef NEMO_CUDA_RNG_CU_H
+#define NEMO_CUDA_RNG_CU_H
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of NeMo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*! Per-neuron normal random number generator state */
+struct nrng_t {
+	/* Per-neuron RNG state variable with 4x32-bit state stored in 2D vector
+	 * with the given pitch */
+	unsigned* state;		
+	size_t pitch;
+};
+
+#endif

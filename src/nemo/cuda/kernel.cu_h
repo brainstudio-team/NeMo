@@ -1,0 +1,42 @@
+#ifndef KERNEL_CU_H
+#define KERNEL_CU_H
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of nemo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <nemo/internal_types.h>
+#include <nemo/config.h>
+
+#define THREADS_PER_BLOCK 256
+
+#define DELAY_BITS 9
+#define MAX_DELAY (1<<DELAY_BITS)
+#define MAX_STDP_DELAY 64
+#define STDP_WINDOW_SIZE 64
+
+#define NEURON_BITS 10
+#define MAX_PARTITION_SIZE (1<<NEURON_BITS)
+
+#define PARTITION_BITS 10
+
+/*! We use one partition per thread block, so this is also the maximum number
+ * of thread blocks */
+#define MAX_PARTITION_COUNT (1<<PARTITION_BITS)
+
+// Note that this warp count may not be correct, although it matches the warp
+// count for current high-end devices
+#define WARP_SIZE 32
+#define WARPS_PER_BLOCK (THREADS_PER_BLOCK / WARP_SIZE)
+
+#define PARTITION_COUNT gridDim.x
+#define CURRENT_PARTITION blockIdx.x
+
+#define RNG_STATE_COUNT 4
+
+#endif

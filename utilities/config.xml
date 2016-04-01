@@ -1,0 +1,178 @@
+<config>
+	<nodes>
+		<node>
+			<rank>0</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>1</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>2</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+
+		<node>
+			<rank>3</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>4</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>5</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>6</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>7</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+
+		<node>
+			<rank>8</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>9</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>10</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>11</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>12</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+
+		<node>
+			<rank>13</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>14</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>15</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>16</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>17</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+
+		<node>
+			<rank>18</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>19</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+		<node>
+			<rank>20</rank>
+			<logging>false</logging>
+			<backend>
+				<type>cuda</type>
+			</backend>
+		</node>
+		
+	</nodes>
+	
+	<stdp>
+		<enabled>false</enabled>
+		<period>10</period>
+		<reward>1</reward>
+	</stdp>
+</config>

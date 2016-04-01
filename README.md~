@@ -1,4 +1,4 @@
-# NeMo v@NEMO_VERSION@
+# NeMo v0.7.XXX
 
 NeMo is a high-performance spiking neural network simulator
 which simulates networks of Izhikevich neurons on CUDA-

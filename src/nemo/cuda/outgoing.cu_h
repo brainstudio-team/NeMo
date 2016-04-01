@@ -1,0 +1,55 @@
+#ifndef NEMO_CUDA_OUTGOING_CU_H
+#define NEMO_CUDA_OUTGOING_CU_H
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of nemo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*! \file outgoing.cu_h Outgoing data (kernel functions)
+ *
+ * \see nemo::cuda::Outgoing for more details
+ */
+
+#include <cuda_runtime.h>
+
+#include "types.h"
+
+
+/*! Each outgoing spike group specifies
+ *
+ * - target partition
+ * - address of the full synapse group
+ *
+ * We keep a 32-bit group address. This is enough for 4 billion warps. With a
+ * warp-size of 32, this is 32x as much memory as current devices can address.
+ */
+typedef uint2 outgoing_t;
+
+/*! The addresses to each neuron/delay specific entry in outgoing is stored in
+ * a seprate data structure. This is so that outgoing can be compacted. With
+ * fixed-length rows in outgoing it becomes very large indeed.
+ *
+ * The address information contains
+ *
+ * - the word offset to the beginning of the row (x)
+ * - the length (in words) of the row (y)
+ */
+typedef uint2 outgoing_addr_t;
+
+
+/*! Dummy outgoing entry pointing to the invalid null warp (see \ref nemo::cuda::Outgoing::init) */
+const outgoing_t INVALID_OUTGOING = make_uint2(0, 0);
+
+
+//! \todo make this a template instead
+__host__ __device__
+size_t
+outgoingAddrOffset(unsigned partition, short neuron, short delay);
+
+
+#endif

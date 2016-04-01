@@ -1,0 +1,88 @@
+.TH nemo_Configuration 3 "Mar 2010" "" "Nemo Reference Manual"
+.ad l
+.nh
+.SH NAME
+nemo::Configuration \- Global simulation configuration.  
+
+.PP
+.SH SYNOPSIS
+.br
+.PP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBenableLogging\fP ()"
+.br
+.ti -1c
+.RI "void \fBsetWriteOnlySynapses\fP ()"
+.br
+.ti -1c
+.RI "void \fBsetCudaBackend\fP (int device=-1)"
+.br
+.ti -1c
+.RI "void \fBsetCpuBackend\fP (int threadCount=-1)"
+.br
+.ti -1c
+.RI "int \fBcudaDevice\fP () const "
+.br
+.ti -1c
+.RI "int \fBcpuThreadCount\fP () const "
+.br
+.ti -1c
+.RI "const char * \fBbackendDescription\fP () const "
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Global simulation configuration. 
+.SH "Member Function Documentation"
+.PP 
+.SS "void nemo::Configuration::enableLogging ()"
+.PP
+Switch on logging and send output to stdout 
+.SS "void nemo::Configuration::setWriteOnlySynapses ()"
+.PP
+Make the synapses write-only
+.PP
+By default synapse state can be read back at run-time. This may require setting up data structures of considerable size before starting the simulation. If the synapse state is not required at run-time, specify that synapses are write-only in order to save memory. By default synapses are readable 
+.SS "void nemo::Configuration::setCudaBackend (int device = \fC-1\fP)"
+.PP
+Specify that the CUDA backend should be used and optionally specify a desired device. If the (default) device value of -1 is used the backend will choose the best available device.
+.PP
+If the cuda backend (and the chosen device) cannot be used for whatever reason, an exception is raised.
+.PP
+The device numbering is the numbering used internally by NeMo This device numbering may differ from the one provided by the CUDA driver directly, since NeMo ignores any devices it cannot use. 
+.SS "void nemo::Configuration::setCpuBackend (int threadCount = \fC-1\fP)"
+.PP
+Specify that the CPU backend should be used and optionally specify the number of threads to use. If the default thread count of -1 is used, the backend will choose a sensible value 
+.SS "int nemo::Configuration::cudaDevice () const"
+.PP
+\fBReturns:\fP
+.RS 4
+the chosen CUDA device or -1 if CUDA is not the selected backend. 
+.RE
+.PP
+
+.SS "int nemo::Configuration::cpuThreadCount () const"
+.PP
+\fBReturns:\fP
+.RS 4
+the number of threads used by the CPU backend or -1 if CPU is not the selected backend. 
+.RE
+.PP
+
+.SS "const char* nemo::Configuration::backendDescription () const"
+.PP
+\fBReturns:\fP
+.RS 4
+description of the chosen backend 
+.RE
+.PP
+
+
+.SH SEE ALSO
+nemo(3) for library overview
+.SH AUTHOR
+.PP 
+Andreas Fidjeland (using Doxygen)

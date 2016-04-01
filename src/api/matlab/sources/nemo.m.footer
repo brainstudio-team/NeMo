@@ -1,0 +1,10 @@
+%
+% The library is modal: it is either in the construction/configuration stage or
+% in the simulation stage. nemoCreateSimulation switches from
+% construction/configuration to simulation and nemoDestroySimulation switches
+% back again. Functions are classified as either configuration, construction,
+% or simulation functions, and can only be used in the appropriate stage.
+%
+% NeMo provides the functions listed below. See the documentation for the
+% respective functions for more detail.
+%

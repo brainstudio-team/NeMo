@@ -1,0 +1,1246 @@
+\documentclass[a4paper]{article}
+
+\usepackage{graphicx, listings, amsmath, color, url, xspace, siunitx, microtype, mdframed}
+\usepackage[colorlinks=true]{hyperref}
+ 
+\usepackage{minted}
+\usemintedstyle{pastie}
+
+%\usepackage{multitoc}
+
+\setlength{\parindent}{0pt} 
+\setlength{\parskip}{2ex}
+
+
+\newenvironment{mintframe}
+  {\begin{mdframed}[linecolor=black, topline=true, bottomline=true,
+    leftline=false, rightline=false, backgroundcolor=yellow!13!white,
+    nobreak=true]
+  }{
+  \end{mdframed}
+}
+
+\definecolor{light-gray}{gray}{0.8}
+
+\lstset{
+	tabsize=2,
+	basicstyle=\small \ttfamily,
+	numberstyle=\tiny,
+	stepnumber=1,
+	numbersep=5pt,
+	frame=single,
+	framerule=0pt,
+	backgroundcolor=\color{light-gray}
+}
+
+\lstnewenvironment{matlab}{\lstset{language=Matlab, numbers=none}} {}
+\lstnewenvironment{python}{\lstset{language=Python, numbers=none}} {}
+\lstnewenvironment{ccode}{\lstset{language=C, numbers=none,
+              keywordstyle=\color{blue},
+              stringstyle=\color{red},
+              commentstyle=\color{green},
+              morecomment=[l][\color{magenta}]{\#}
+}} {}
+\lstnewenvironment{shell}{\lstset{basicstyle={\ttfamily}, numbers=none}} {}
+
+\newcommand{\nemo}{\texttt{NeMo}\xspace}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\command}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+\newcommand{\directory}[1]{\texttt{#1}}
+\newcommand{\library}[1]{\texttt{#1}}
+
+% rst2latex leaves in title references
+\newcommand{\titlereference}[1]{\textsl{#1}}
+
+\newcommand{\cpp}{C\nolinebreak\hspace{-.05em}\raisebox{.4ex}{\tiny\bf +}\nolinebreak\hspace{-.10em}\raisebox{.4ex}{\tiny\bf +}\xspace}
+
+% Math mode command
+\newcommand{\param}[2]{#1_{\text{#2}}}
+\newcommand{\vparam}[1]{\param{v}{#1}}
+\newcommand{\tauparam}[1]{\param{\tau}{#1}}
+\newcommand{\iparam}[1]{\param{I}{#1}}
+
+% rst2latex also sets this on inside the document
+\newlength{\locallinewidth}
+
+\input{title}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+\nemo is a library for discrete-time simulation of spiking neural networks. It
+is aimed at real-time simulation of tens of thousands of neurons on a single
+workstation. \nemo runs on parallel hardware; in particular it can run on
+CUDA-enabled GPUs. No parallel programming is required on the part of the end
+user, as parallelisation is handled by the library. The library has interfaces
+in \cpp, C, Python, and Matlab.
+
+\end{abstract}
+
+%\tableofcontents
+%\newpage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{A short tutorial introduction}
+
+The \nemo library can be used to simulate a network of point neurons. The
+library can support different types neuron models via a plugin system. The
+current version of the library ships with support for Izhikevich neurons
+\cite{izhikevich2003simple_model} and Kuramoto oscillators \cite{Kuramoto1984}.
+
+The library exposes three basic types of objects: network, configuration, and
+simulation. Setting up and running such a simulation involves:
+
+\begin{enumerate}
+
+  \item Creating a network object and adding neurons and synapses;
+
+  \item Creating a configuration object and setting its parameters; and
+
+  \item Creating a simulation object from the network and configuration objects
+  and running the simulation.
+
+\end{enumerate}
+
+The following section illustrates basic usage of the library using the Python interface.
+The other language interfaces (Section~\ref{api}) have similar usage.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Constructing a network}
+
+Network construction is performed using a low-level interface where neurons and
+synapses are added individually. The Python and Matlab APIs have vector forms
+for some functions, but fundamentally each neuron and synapse must be
+individually specified. Higher-level construction interfaces, e.g. using
+various forms of projections, can be built on top of this, but is not part of
+\nemo. One such system is BrainStudio, also built and maintained by part of the
+\nemo\ team.
+
+% TODO: add reference to BrainStudio
+
+Each neuron is specified in terms of its neuron type, a user-provided index, a
+list of parameters, and a list of initial values for state variables. The
+number of parameters and state variables varies between neuron types. To create
+neurons of a specific type, the neuron type must be registered in the network.
+The following code snippet creates 1000 Izhikevich neurons with some variation
+in parameters: 
+
+\begin{mintframe}
+\begin{minted}{python}
+net = nemo.Network()
+iz = net.add_neuron_type('Izhikevich')
+Ne = 800
+Ni = 200
+N  = Ne + Ni
+
+# Excitatory neurons
+re = rn.random(Ne)**2
+c  = list(-65.0 + 15*re)
+d  = list(8.0 - 6.0*re)
+paramDictEx = {'a': 0.02, 'b': 0.2, 'c': c,
+               'd': d, 'sigma': 5.0}
+stateDictEx = {'v': c, 'u': 0.2*c}
+net.add_neuron(iz, range(Ne), paramDictEx, stateDictEx)
+
+# Inhibitory neurons
+ri = rn.random(Ni)
+a  = list(0.02 + 0.08*ri)
+b  = list(0.25 - 0.05*ri)
+c  = -65.0
+paramDictIn = {'a': a, 'b': b, 'c': c,
+               'd': 2.0, 'sigma': 2.0}
+stateDictIn = {'v': c, 'u': 0.2*c}
+net.add_neuron(iz, range(Ne, N), paramDictIn, stateDictIn)
+\end{minted}
+\end{mintframe}
+
+Note that the \verb@add_neuron@ functions accept a mix of scalars and vectors
+as arguments and within the input parameter and state dictionaries. The \cpp
+and C API have scalar versions only. The keys of the dictionaries must match
+exactly the name of the parameter and state variable of the corresponding
+neuron type. For the meaning of the parameters, refer to the documentation for
+the Izhikevich model (Section \ref{model:neuron:izhikevich}).
+
+Synapses can be added by specifying the source and target neurons as well as
+the weight, conductance delay (in milliseconds), and a plasticity flag (i.e.
+whether the synapse is subject to change due to synaptic plasticity). For
+example, to create all-to-all static connections with a delay of \SI{1}{\milli
+\second} between the neurons defined above:
+
+\begin{mintframe}
+\begin{minted}{python}
+# Excitatory connections
+for nidx in range(Ne):
+    targets = range(N)
+    weights = list(0.5*rn.random(N))
+    delay = 1
+    net.add_synapse(nidx, targets, delay, weights, False)
+
+# Inhibitory connections
+for nidx in range(Ne, N):
+    targets = range(N)
+    weights = list(-1*rn.random(N))
+    delay = 1
+    net.add_synapse(nidx, targets, delay, weights, False)
+\end{minted}
+\end{mintframe}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Creating a configuration}
+
+The configuration object specifies simulation-wide parameters, such as a global
+STDP function (disabled by default, see Section \ref{sec:stdp}). It also
+specifies which of the available backends (CPU or GPU) will be used. In most
+cases the default configuration is the recommended one:
+
+% TODO: add ref to (Section~\ref{backends}) when it's done.
+
+\begin{mintframe}
+\begin{minted}{python}
+conf = nemo.Configuration()
+\end{minted}
+\end{mintframe}
+
+A default-constructed configuration object will choose the best backend
+available, but if a specific backend is desired the user can set this
+explicitly via \verb@conf.set_cuda_backend()@ or \verb@conf.set_cpu_backend()@.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Creating and running a simulation}
+
+We can now create a simulation from the network and configuration
+objects.
+
+\begin{mintframe}
+\begin{minted}{python}
+sim = nemo.Simulation(net, conf)
+\end{minted}
+\end{mintframe}
+
+The simulation is run by stepping through it one millisecond-sized step at a
+time, getting back a vector of fired neuron indices for each call. The whole
+simulator operates on \SI{1}{\milli \second}-wide bins, so no time resolution
+below this is possible.\footnote{With the exception of the internal dynamics of
+each neuron, that can be integrated with any level of precision} To run the
+simulation for a second:
+
+\begin{mintframe}
+\begin{minted}{python}
+for t in range(1000):
+    fired = sim.step()
+\end{minted}
+\end{mintframe}
+
+We can also provide external stimulus to the network by forcing specific
+neurons to fire or injecting current. For example, to force neurons 0 and 1 to
+fire synchronized at a steady \SI{10}{\hertz} and inject a constant current of
+0.7 in neurons 2 and 3 for \SI{10}{\second} one could do the following
+(ignoring firing output for the time being):
+
+\begin{minted}{python}
+stimulus = [0, 1]
+current = [(2, 0.7), (3, 0.7)]
+for t in range(10000):
+    if t % 100 == 0:
+        sim.step(fstim=stimulus, istim=current)
+    else:
+        sim.step(istim=current)
+\end{minted}
+
+The collection of examples above shows the basic usage of the simulator. The
+user can perform other actions on the simulation object as well including
+querying neuron or synapse data, and activate STDP (Section \ref{sec:stdp}).
+
+For full details of library usage refer to the language-specific notes
+(Section~\ref{api}) and the online language-specific function reference.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Simulation model}
+\label{model}
+
+\nemo has a plugin system which can support different types of neurons.  This
+version ships with support for Izhikevich neurons
+(Section~\ref{model:neuron:izhikevich}), Poisson spike sources
+(Section~\ref{model:neuron:poisson}), ancillary input neurons
+(Section~\ref{model:neuron:input}), and both delay- and phase-coupled Kuramoto
+oscillators (Section~\ref{model:neuron:kuramoto}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Izhikevich neurons}
+\label{model:neuron:izhikevich}
+
+\begin{tabular}{ll}
+Parameters      & $a, b, c, d, \sigma$                 \\
+State variables & $u, v$                               \\
+Dynamics        & $\frac{dv}{dt} = 0.04v^2+5v+140-u+I + \mathcal{N}(0,\sigma^2)$ \\
+                & $\frac{du}{dt} = a(bv-u)$            \\
+Fire            & $v \ge 30$                           \\
+Reset           & $v\leftarrow c$                      \\
+                & $u\leftarrow u+d$                    \\
+Numerical integration & Euler with step size of 0.25ms \\
+\end{tabular}
+
+The Izhikevich neuron model 
+\cite{izhikevich2003simple_model}
+consists of a two-dimensional system of ordinary differential equations defined by
+\begin{align}
+	\dot{v} & = 0.04v^2+5v+140-u+I    \label{eq:update_v} \\
+	\dot{u} & = a(bv-u) ~,            \label{eq:update_u}
+\end{align}
+with an after-spike resetting
+\begin{equation}
+\label{eq:reset}
+\text{if }v\ge30\text{ mV, then}\begin{cases}v\leftarrow c\\u\leftarrow u+d\end{cases} ~,
+\end{equation}
+
+where $v$ represents the membrane potential and $u$ the membrane recovery
+variable, accounting for the activation of K$^+$ and the inactivation of Na$^+$
+providing post-potential negative feedback to $v$. The parameter $a$ describes
+the time-scale of the recovery variable, $b$ describes its sensitivity to
+sub-threshold fluctuations, $c$ gives the after-spike reset value of the
+membrane potential, and $d$ describes the after-spike reset of the recovery
+variable.  The variables $a$--$d$ can be set so as to reproduce the behaviour
+of different types of neurons \cite{izhikevich2003simple_model}. The term $I$
+in Equation~\ref{eq:update_v} represents the combined current from spike
+arrivals from all presynaptic neurons, which are summed every simulation cycle.
+
+In addition to the basic model parameters $a$--$d$ and state variables $u$ and
+$v$, the user can specify a random input current to each neuron. The input
+current is drawn from $\mathcal{N}(0, \sigma^2)$, where $\sigma$ is set
+separately for each neuron.  If $\sigma$ is set to zero, no input current is
+generated.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{IF\_curr\_exp}
+\label{model:neuron:IF_curr_exp}
+
+\begin{tabular}{ll}
+Parameters      & $\vparam{rest}, \vparam{reset}, c_m, \tau_m, \tauparam{refrac}, \tauparam{synE}, \tauparam{synI}, \vparam{thresh}, \iparam{offset}$ \\
+State variables & $v, I_E, I_I$                                  \\
+Dynamics        & $\frac{dv}{dt} = (I_E + I_I + \iparam{offset}) / c_m + (\vparam{rest}-v)/\tau_m$ \\
+				& $\frac{dI_E}{dt} = -I_E/\tauparam{synE}$ \\
+				& $\frac{dI_I}{dt} = -I_E/\tauparam{synI}$ \\
+Fire            & $v \ge \vparam{thresh}$                           \\
+Reset           & $v\leftarrow \vparam{reset}$                      \\
+Refractory period & $\tauparam{refrac}$ \\
+Numerical integration & Euler \\
+\end{tabular}
+
+This integrate-and-fire neuron model with exponential decay implements the
+standard neuron model in PyNN with the same name.  Time-related paramaters are
+expressed in time-steps (i.e. in \si{\milli \second}). $I_E$ and $I_I$ are the
+incoming currents arising from exctatory and inhibitory PSPs resepectively.
+During the refractory period the voltage stays constant.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Poisson spike source}
+\label{model:neuron:poisson}
+
+\begin{tabular}{ll}
+Parameters	    & $\lambda$         \\
+State variables & none              \\
+Dynamics        & none              \\
+Fire            & urand $< \lambda$ \\
+Reset           & N/A               \\
+\end{tabular}
+
+A Poisson spike source generates spikes according to a Poisson process with
+parameter $\lambda$. During a single simulation cycle a Poisson spike source
+generates either one spike (with probability $\lambda$) or no spikes (with
+probability $1 - \lambda$). Inter-spike intervals are thus never smaller than
+the simulation time-step (i.e.  \SI{1}{\milli \second}), and $\lambda$ must be
+set taking into account the size of the time step (i.e. a firing rate in units
+of \si{\kilo \hertz}).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Input neuron}
+\label{model:neuron:input}
+
+\begin{tabular}{ll}
+Parameters	    & none           \\
+State variables & none           \\
+Dynamics        & none           \\
+Fire            & user-specified \\
+Reset           & N/A            \\
+\end{tabular}
+
+An input neuron has no internal dynamics, but can be forced to fire (via the
+\code{step} function). It can thus be used for neurons providing input to the
+network, e.g. from a sensor.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Kuramoto oscillators}
+\label{model:neuron:kuramoto}
+
+%TODO: explain the difference in math and in parameters between delay- and
+% phase-coupled Kuramotos. Say that they are two separate plugins.
+
+\begin{tabular}{ll}
+Parameters      & $\omega, \bar{C}, \alpha$ \\
+State variables & $\theta$                  \\
+Dynamics        & see below                 \\
+Fire            & never                     \\
+Reset:          & N/A                       \\
+Numerical integration & RK4                 \\
+\end{tabular}
+
+Kuramoto oscillators \cite{Kuramoto1984} are not strictly neuron models,
+however they are sometimes used for modelling neural synchronisation phenomena
+and fit reasonably well into the framework of \nemo. There are significant
+differences with the common spiking neuron framework, however. For example,
+oscillators never fire and there is no notion of a membrane potential.
+
+We implement a Kuramoto model with weighted couplings, phase lags and delays.
+Each oscillator is described by its phase $\theta$, which is measured in
+radians and which are always in the range $[0, 2\pi)$.
+  
+Each oscillator has an intrinsic frequency $\omega$ at which it oscillates in
+the absence of couplings. All inputs to oscillator $i$ are normalised by
+$\bar{C}$ and applied a phase lag $\alpha$.  Couplings between oscillators
+have a coupling strength (corresponding to synaptic weight in other models)
+and a time delay (corresponding to conduction delay). Mathematically, the
+model is described by
+
+\begin{equation}
+  \frac{d\theta_i}{dt}(t) = \omega_i + \frac{1}{\bar{C}_i} \sum_{j} w_{ij} \sin(\theta_j(t-\tau_{ij}) - \theta_i(t) - \alpha_i) ~,
+\end{equation}
+
+where $\theta_i(t)$ is the phase of oscillator $i$ at time $t$, $w_{ij}$ and
+$\tau_{ij}$ are the coupling strength and phase lag between oscillators $i$ and
+$j$ and all other magnitudes have the roles described above.
+
+There is an intrinsic unit of time, with no physical meaning. Delays are
+expressed in term of this time step. The state is updated every time step using
+fourth-order Runge-Kutta.
+
+The phase history is initialised by running the model ``backwards''. At the
+start of simulation the phase of each oscillator is thus the value specified
+when the oscillator was created, and previous phases have sensible values.
+
+In the present version of \nemo the Kuramoto model should be considered
+experimental. The present version has the limitation that the in-degree of
+each oscillator is limited to 1024.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Basic synapse model}
+\label{sec:synapse}
+
+% TODO: add more information about the synapse model
+
+Synapses are specified by a conductance delay and a weight. Conductance delays
+are specified in whole milliseconds, with a minimum delay of \SI{1}{\milli
+\second} and the maximum supported delay is to \SI{64}{\milli \second}.
+
+Synapses can be either static or plastic, using spike-timing synaptic
+plasticity, the details of which can be found in the next section.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{STDP model}
+\label{sec:stdp}
+
+\nemo supports spike-timing dependant plasticity \cite{Sjostrom2010}, i.e.
+synapses can change their weight during simulation depending on the temporal
+relationship between the firing of the pre- and post-synaptic neurons. To make
+use of STDP the user must enable STDP globally by specifying an STDP function
+in the \code{Configuration} object and enable plasticity for each synapse when
+constructing the network. A single STDP function is applied to the whole
+network.
+
+Synapses undergoing STDP can be either potentiated or depressed. With STDP
+enabled, the simulation accumulates a weight change which is the sum of
+potentiation and depression for each synapse. Potentiation always moves the
+synaptic weight away from zero, which for excitatory synapses is more positive,
+and for inhibitory synapses is more negative. Depression always moves the
+synapses weight towards zero. The accumulation of potentiation and depression
+statistics takes place every cycle, but the modification of the weight only
+takes place when explicitly requested.
+
+Generally a synapse is potentiated if a spike arrives shortly before the
+postsynaptic neuron fires. Conversely, if a spike arrives shortly after the
+postsynaptic firing the synapse is depressed. Also, the effect of either
+potentiation or depression generally weakens as the time difference, $dt$,
+between spike arrival and firing increases. Beyond certain values of $dt$
+before or after the firing, STDP has no effect. These limits for $dt$ specify
+the size of the STDP window.
+
+The user can specify the following aspects of the STDP function:
+
+\begin{itemize}
+	\item the size of the STDP window;
+	\item what values of $dt$ cause potentiation and which cause depression;
+	\item the strength of either potentiation or depression for each value of $dt$, 
+		i.e. the shape of the discretized STDP function;
+	\item maximum weight of plastic excitatory synapses; and
+	\item minimum weight of plastic inhibitory synapses.
+\end{itemize}
+
+Since the simulation is discrete-time, the STDP function can be specified by
+providing values of the underlying function sampled at integer values of $dt$.
+For any value of $dt$ a positive value of the function denotes potentiation,
+while a negative value denotes depression. The STDP function is described using
+two vectors: one for spike arrivals \emph{before} the postsynaptic firing
+(pre-post pair), and one for spike arrivals \emph{after} the postsynaptic
+firing (post-pre pair). The total length of these two vectors is the size of
+the STDP window. The typical scheme is to have positive values for pre-post
+pairs and negative values for post-pre pairs, but other schemes can be used.
+
+When accumulating statistics a pairwise nearest-neighbour protocol is used.
+For each postsynaptic firing potentiation and depression statistics are updated
+based on the nearest pre-post spike pair (if any inside STDP window) and the
+nearest post-pre spike pair (if any inside the STDP window).
+
+Excitatory synapses are never potentiated beyond the user-specified maximum
+weight, and are never depressed below zero. Likewise, inhibitory synapses are
+never potentiated beyond the  user-specified minimum weight, and are never
+depressed above zero. Synapses can thus be deactivated, but never change from
+excitatory to inhibitory or vice versa.
+
+% TODO: max size of window
+
+% TODO: finish this practical example
+
+%As a practical example, consider an asymmetric STDP scheme specified using the following functions for LTP and LTD:
+%\[ stdp(dt) = \alpha e^{-dt / \tau} \]
+%where $\alpha$ specifies a scaling and $\tau$ the size of either the potentiation or depression window. For LTP, let $\alpha = 1.0, \tau=20$, and for LTD let $alpha=0.8, \tau=20$. This STDP function is specified using two vectors like this:
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Discrete-time simulation}
+\label{model:step}
+
+The simulation is discrete-time with a fixed one millisecond step size. Within
+each step the following actions take place in a fixed order:
+
+\begin{enumerate}
+
+	\item Compute accumulated current for incoming spikes;
+
+	\item Update the neuron state;
+
+  \item Determine if any neurons fired. The user can specify neurons which
+  should be forced to fire at this point;
+
+	\item Update the state of the fired neurons; and
+
+  \item Accumulate STDP statistics, if STDP is enabled.
+
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Neuron and synapse indices}
+
+The user specifies the unique index of each neuron. These are just regular
+unsigned integers. The neuron indices do not \emph{have} to start from zero and
+lie in a contiguous range, but in the current implementation such a simple
+indexing scheme may lead to better memory usage.
+
+Synapses also have unique indices, but these are assigned by the library itself.
+% TODO: add reference to function here
+Synapse indices are only required if querying the synapse state at run-time.
+
+% TODO: maybe add practical example here
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Numerical precision}
+
+The weights are stored internally in a fixed-point format (Q11.20) for two
+reasons.  First, it is then possible to get repeatable results regardless of
+the order in which synapses are processed in a parallel setting (fixed-point
+addition is associative, unlike floating point addition).  Second, it results
+in better performance, at least on the CUDA backend with older cards (device
+capability $<$ 2.0), where atomic operations are available for
+integer/fixed-point but not for floating point.  The fixed-point format should
+not overflow for synapses with remotely plausible weights, but the current
+accumulation uses saturating arithmetic nonetheless.
+
+Neuron parameters are stored as single-precision floating point.
+
+% TODO: add this section back
+%\section{Simulator backends}
+%\label{backends}
+
+%\subsection{CUDA}
+
+% minimum device capability
+% Fermi etc.
+% Run-time dependencies
+
+% Dynamic loading
+
+%\subsection{CPU}
+
+% 
+% Run-time dependencies
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Application programming interfaces}
+\label{api}
+
+\nemo is implemented as a \cpp class library and can thus be used directly in
+programs written in \cpp. There are also bindings in C (Section \ref{api:c}),
+Python (Section \ref{sec:python}), and Matlab (Section \ref{sec:matlab}). The
+different language APIs follow largely the same programming model.  The
+following sections specify the language-specific issues (linking, naming
+schemes, etc) while full function reference documentation can be found in the
+online documentation for
+\href{http://nemosim.sourceforge.net/api/index.html}{C++},
+\href{http://nemosim.sourceforge.net/api/nemo_8h.html}{C}, and
+\href{http://nemosim.sourceforge.net/python/nemo.html}{Python}.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{C++ API}
+\label{api:cpp}
+
+The \cpp API is used by including the header file \file{nemo.hpp} and linking
+against the nemo dynamic library (\file{libnemo.so}, \file{libnemo.dylib} or
+\file{nemo.dll}). All classes and functions are found in the \code{nemo}
+namespace. Class names use initial upper-case. Function names use camelCase
+with initial lower-case letter. The library is not thread safe.
+
+Errors are reported via exceptions of type \code{nemo::exception}. These are
+subclasses of \code{std::exception}, so a descriptive error messages is
+available using \code{const char* nemo::exception::what()}. Additionally,
+internally generated exceptions also carry an error number (\code{int
+nemo::exception::errorNumber()}) which are listed in \code{<nemo/types.hpp>}.
+If disambiguation between different \nemo-generated error types is not
+required, it is sufficient to simply catch \code{std::exception\&}.
+
+The following code snippet shows basic usage. The \nemo distribution contains
+an example directory with more advanced examples.
+
+\begin{mintframe}
+\begin{minted}{cpp}
+#include <nemo.hpp>
+
+// ...
+
+try {
+    nemo::Network net;
+    net.addNeuron(0,0.02,0.20,-61.3,6.5,-13.0,-65.0,0.0);
+    net.addNeuron(1,0.06,0.23,-65.0,2.0,-14.6,-65.0,0.0);
+    net.addSynapse(0, 1, 10, 1.0, true);
+    net.addSynapse(1, 0, 1, -0.5, false);
+
+    nemo::Configuration conf;
+
+    boost::scoped_ptr<nemo::Simulation>
+    sim(nemo::simulation(net, conf)); 
+
+    for (unsigned ms = 0; ms < 1000; ++ms) {
+        const vector<unsigned>& fired = sim->step();
+        for(vector<unsigned>::const_iterator n = fired.begin();
+              n != fired.end(); ++n) {
+            cout << ms << " " << *n << endl;
+        }
+    }
+
+} catch(exception& e) {
+    cerr << e.what() << endl;
+}
+\end{minted}
+\end{mintframe}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{C API}
+\label{api:c}
+
+The C API follows the general object-model as outlined above. To use the C API,
+include the header file \file{nemo.h} instead of \file{nemo.hpp}, and then link
+to \library{libnemo.so}. All names use lower case and are separated by
+underscores. Both function and type names are prefixed `\code{nemo\_}` and type
+names are also suffixed `\code{\_t}`.
+
+In the C API the network, configuration, and simulation objects are controlled
+via opaque pointers with typedefed names \code{nemo\_network\_t},
+\code{nemo\_configuration\_t}, and \code{nemo\_simulation\_t}. These objects
+are generated with methods \code{nemo\_new\_x} (\code{x} $=$ \code{network},
+\code{configuration}, or \code{simulation}), and should be explicitly destroyed
+with the corresponding methods \code{nemo\_delete\_x}. Methods on specific
+objects take the relevant opaque pointer as the first parameter.
+
+Error handling is done via return codes.  All API functions return a value of
+type \code{nemo\_status\_t}, which will be \code{NEMO\_OK} if everything went
+fine and some other value (see \file{<nemo/types.h>}) otherwise. The C API is
+not thread-safe.
+
+The C program snippet below shows basic usage of the \nemo library (without any
+error handling). Note that the step function has arguments for providing firing
+stimulus and input current stimulus, but that these are unused here.
+
+\begin{mintframe}
+\begin{minted}{c}
+#include <nemo.h>
+
+// ...
+
+nemo_network_t net = nemo_new_network();
+nemo_add_neuron(net,0,0.02,0.20,-61.3,6.5,-13.0,-65.0,0.0);
+nemo_add_neuron(net,1,0.06,0.23,-65.0,2.0,-14.6,-65.0,0.0);
+nemo_add_synapse(net, 0, 1, 10, 1.0, true);
+nemo_add_synapse(net, 1, 0, 1, -0.5, false);
+
+nemo_configuration_t conf = nemo_new_configuration();
+nemo_simulation_t sim = nemo_new_simulation(net, conf);
+
+for (unsigned ms = 0; ms < 1000; ms++) {
+    unsigned *fired, nfired;
+    nemo_step(sim, NULL, 0, NULL, NULL, 0, &fired, &nfired);
+    for(unsigned i = 0; i < nfired; i++) {
+        printf("%u %u\n", ms, nfired[i]);
+    }
+}
+
+nemo_delete_simulation(sim);
+nemo_delete_configuration(conf);
+nemo_delete_network(net);
+\end{minted}
+\end{mintframe}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Python API}
+\label{sec:python}
+
+% Overview
+
+The Python API for \nemo provides an object-oriented interface that closely
+reflects the underlying \cpp class library. The module \library{nemo} contains
+the three objects \code{Network}, \code{Configuration}, and \code{Simulation}.
+The interface layer is implemented using \library{boost::python}, the support
+library of which is statically linked in. Function names are all
+\code{lower\_case\_with\_underscores}.
+
+\paragraph{Setup}
+
+When installing the base \nemo library (Section~\ref{installation}), the
+Python wrapper is installed to a subdirectory of the main installation path
+(Table~\ref{tab:python-path}). This contains a \command{distutils} setup
+script, which installs the module initialization file to the appropriate
+location in the system's Python installation. Run \code{python setup.py
+install} to perform this installation, after which \code{import nemo} should
+work. Alternatively, the \nemo-related files can be left in the \nemo-specific
+installation directory. The Python path then has to be set manually to include
+the relevant path from Table~\ref{tab:python-path}, either by setting the
+environment variable \command{PYTHONPATH}, or within a script/session by
+calling \code{sys.path.append}.
+
+\begin{table}[!hb]
+	\centering
+	\begin{tabular}{ll}
+		Platform & Default installation path \\
+		\hline
+		Windows & \file{C:\textbackslash Program Files\textbackslash NeMo\textbackslash Python} \\
+    % PEDRO: This is not the default path for me, it may have changed
+		% Linux & \file{/usr/share/nemo/python} \\
+		Linux & \file{/usr/local/share/nemo/python} \\
+		\hline
+	\end{tabular}
+	\caption{Default Python API installation path.}
+	\label{tab:python-path}
+\end{table}
+
+\paragraph{PyNN}
+
+Python users may be interested in using the PyNN interface to \nemo. PyNN
+\cite{davison08pynn} is a common API for a number of spiking neural network
+simulators including NEURON \cite{Hines1997}, NEST \cite{Gewaltig2007}, PCSIM
+\cite{Pecevski2009} and Brian \cite{Goodman2009}. This interface provides more
+complex connection patterns, and more refined control of neuron populations
+than the low-level API used by \nemo. PyNN operates with a number of standard
+neuron models. To use PyNN, ensure the \library{nemo} module is installed and
+on the python path, and then do \code{from pyNN.nemo import *}. PyNN is a
+separate larger project, which is fully documented
+\href{http://neuralensemble.org/trac/PyNN}{online}. The \nemo-PyNN interface is
+functional but should be considered experimental.
+
+\paragraph{Help and error handling}
+
+The classes and functions in the \library{nemo} module are documented using
+standard docstrings, so a full function reference is available from within an
+interactive session. Errors generated by \nemo result in a \code{RuntimeError}
+in the Python layer.
+% 
+% The general pattern of usage is
+% \begin{enumerate}
+%   \item Create a configuration object and configurate as appropriate;
+%   \item Create a network object and populate with neurons and synapses; and
+%   \item Create a simulation from the configuration and network objects and run
+%   the simulation
+% \end{enumerate}
+
+The following code shows a simple example constructing a network of 1000 fully
+connected neurons, simulating it for one second, and printing the indices of
+the fired neurons. Note that the construction methods \code{Network.add\_neuron} and
+\code{Network.add\_synapse} support an arbitrary mix of scalar and list
+arguments. Other methods such as neuron getters and setters support the same
+type of arguments.
+
+\begin{mintframe}
+  \inputminted{python}{example.py}
+\end{mintframe}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Matlab API}
+\label{sec:matlab}
+
+% Modal API
+
+The Matlab API provides a modal functional interface, rather than the
+object-oriented interface of the underlying C++ library. The user manipulates a
+single network and a single simulation, and is either in the
+construction/configuration mode or in the simulation mode. Functions use
+camelCased identifiers, and are prefixed with `\verb@nemo@'.
+
+% Construction mode
+
+During construction/configuration the user can set global configuration
+parameters, add or modify neurons, and add or modify synapses. There is a
+single implicit network, which can be cleared by calling
+\code{nemoClearNetwork}. The global configuration can be reset to defaults by
+calling \code{nemoResetConfiguration}.
+
+% Simulation mode
+
+Simulation mode is entered by calling \code{nemoCreateSimulation}. During
+simulation mode the user can step through the simulation, providing stimulus as
+appropriate, read or modify the neuron state, and read the synapse state. When
+a simulation is complete, configuration/construction mode is entered again by
+calling \code{nemoDestroySimulation}. Note that after destroying the
+simulation, the network is in the same state as before the simulation was
+started.
+
+Help is available for each function using Matlab's regular help system, i.e.
+via calls such as \code{help nemoAddNeuron} and \code{help nemoStep}. A
+top-level help entry is available under \code{help nemo}, which gives a brief
+overview and lists the available functions.
+
+Internal \nemo\ errors result in regular Matlab errors, (i.e. as when
+\code{error} is called in a script).  These errors use identifier
+\code{nemo:api} for basic usage errors for input and output arguments,
+\code{nemo:backend} for errors within the \nemo\ library itself, and
+\code{nemo:mex} for internal errors in the MEX layer.
+
+The Matlab path must contain the directory with the m-files defining the
+available functions and the MEX library that interfaces with \code{libnemo}
+(Table~\ref{tab:matlab-path}.  Use \code{addpath} from within Matlab to set
+this path.
+
+\begin{table}[!hb]
+	\centering
+	\begin{tabular}{ll}
+		Platform & Default installation path \\
+		\hline
+		Windows & \file{C:\textbackslash Program Files\textbackslash NeMo\textbackslash Matlab} \\
+		Linux & \file{/usr/local/share/nemo/matlab} \\
+		\hline
+	\end{tabular}
+	\caption{Default Matlab API installation path.}
+	\label{tab:matlab-path}
+\end{table}
+
+Additionally, the \nemo\ libraries (plus any dependencies such as possibly the
+CUDA runtime library) need to be on the system path. Note that this is
+different from the Matlab path. If the system path is not set correctly Matlab
+will issue a rather unhelpful message about the MEX-file being invalid.
+
+Note that on Linux Matlab does its own loading of \cpp standard libraries (to
+use the version used when Matlab was built). Unless the stars are aligned just
+so this standard library version matches the default \cpp standard libraries on
+the system (which \nemo should have been built against), this will result in an
+error when loading the MEX file. This can be fixed by setting
+\code{LD\_PRELOAD} by to the appropriate location before starting Matlab.
+% TODO: explain this better and add line that fixes it
+
+\begin{minted}{bash}
+export LD_PRELOAD=/lib/libgcc_s.so.1:/usr/lib/libstdc++.so.6.0.13
+\end{minted}
+
+If using \nemo installed from a binary package, ensure that the architecture
+(32/64-bit) matches that of Matlab. A mismatch will mean the Matlab bindings
+won't work.
+
+The following shows a simple Matlab session using \nemo to set up a network of
+1000 fully connected neurons, simulate this network for one second, and print
+the firing pattern:
+
+\begin{mintframe}
+\inputminted{matlab}{example.m}
+\end{mintframe}
+
+Note that a number of the functions are vectorised and accepts a mix of scalar
+and vector arguments. For example, the calls to \code{nemoAddSynapse} create
+1000 synapses which share some parameters but have unique weights.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Installation}
+\label{installation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Windows}
+\label{installation:windows}
+
+The easiest way to install is by using the precompiled library (NSIS
+installer).  This installs \nemo\ to \directory{C:\textbackslash Program
+Files\textbackslash NeMo}, with libraries in the \directory{bin} subdirectory
+and headers in the \directory{include} subdirectory, Python bindings, Matlab
+bindings, and examples are stored in separate subdirectories.  Note that binary
+installer may be built against a specific version of CUDA, as well as for a
+particular architecture (32-bit vs 64-bit).  If the binary installer does not
+match your system, building from source might be the best option. 
+
+Alternatively, the library can be built from source using \command{cmake} to
+generate a Visual Studio project file, and then building from within Visual
+Studio (see Section~\ref{sec:source}).  Builds in Cygwin or MSys/MinGW have
+not been tested.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Linux}
+
+There are no precompiled binaries for Linux, so the library should be built
+from source using \command{cmake} (Section \ref{sec:source}). By default,
+headers are installed to \file{/usr/local/include}; library files to
+\file{/usr/local/lib}; and Python/Matlab bindings, examples and
+documentation to subdirectories of \directory{/usr/local/share/nemo}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{OSX}
+
+The easiest way to install is by using the precompiled library (PackageMaker
+installer). By default, headers are installed to \directory{/usr/include},
+library files are installed to \directory{/usr/lib}, while Python bindings,
+Matlab bindings, examples and documentation are found in subdirectories of
+\directory{/usr/share/nemo}.  While the installer allows changing the install
+path, this may lead to runtime in the current version.  Alternatively, the
+library can be built from source using \command{cmake} and the GNU build tools
+(see Section~\ref{sec:source}).
+
+Installation from source in OSX is possible, but unstable. Different versions
+of the pre-existing software in an OSX system might cause different issues. We
+refer the reader to the troubleshooting guide below (Section \ref{sec:faq}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Building from source}
+\label{sec:source}
+
+\nemo relies on several \library{boost} libraries. Most of these are
+header-only, but the following non-header libraries are also required:
+\library{program\_options}, \library{filesystem}, and \library{date\_time}. On
+Linux/OSX the \library{libltdl} is required for plugin loading. Some additional
+dependencies may be needed depending on what \command{cmake}
+configuration options are set (Table \ref{tab:deps}).
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{.3\textwidth}lp{.3\textwidth}}
+  \hline
+  Feature & \command{cmake} option & Dependency \\
+  \hline
+  CUDA backend & \command{NEMO\_CUDA\_ENABLED} & Cuda toolkit \\
+  Python bindings & \command{NEMO\_PYTHON\_ENABLED} & Boost-Python \\
+  Matlab bindings & \command{NEMO\_MATLAB\_ENABLED} & Matlab (including the \verb@mex@ compiler) \\
+  \hline
+  \end{tabular}
+  \caption{\nemo CMake options and external dependencies they require}
+  \label{tab:deps}
+\end{table}
+
+% ANDREAS: Additionally the CUDA toolkit should be installed, if simulation on GPUs is desired. 
+
+The standard CMake build procedure consists of the following steps:
+
+\begin{enumerate}
+
+  \item Create a directory to store the intermediate results of the build
+  process.
+
+  \item Run \code{cmake} to configure the project and generate Makefiles.
+
+  \item Run \code{make} to compile the source code.
+
+  \item Run \code{make install} to copy the final results into an accesible
+  system location and make them available.
+
+\end{enumerate}
+
+In a terminal, \nemo can be built with the following fragment of code.
+
+\begin{mintframe}
+\begin{minted}{bash}
+cd <NEMO_ROOT>
+mkdir build
+cd build/
+cmake ..
+make
+sudo make install
+\end{minted}
+\end{mintframe}
+
+Remember that if you're planning to use either the Python or Matlab bindings
+you will have to take a few extra steps. You can find the details in the
+relevant sections \ref{sec:python} and \ref{sec:matlab}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Troubleshooting and FAQ}
+\label{sec:faq}
+
+\textbf{Q: Something went wrong when doing cmake:}
+
+\textbf{A:} Make sure you have CMake installed.
+
+\vspace{5pt}
+\textbf{Q: Something went wrong when doing make:}
+
+\textbf{A:} Make sure you have all other dependencies installed.
+
+\vspace{5pt}
+\textbf{Q: I get some CUDA-related errors:}
+
+\textbf{A:} Make sure you have a CUDA-enabled GPU and the NVIDIA CUDA toolkit
+installed. The CUDA-related libraries and executables should be in your
+\verb@PATH@ environment variable. To check your CUDA installation can be easily
+found by \nemo you can run \command{nvcc --version} and check it does not
+produce an error.
+
+For more information, visit NVIDIA's site with
+\href{https://developer.nvidia.com/cuda-gpus}{CUDA-enabled GPUs}, the
+\href{https://developer.nvidia.com/accelerated-computing-toolkit}{CUDA Toolkit}
+and the
+\href{http://developer.download.nvidia.com/compute/cuda/7.5/Prod/docs/sidebar/CUDA_Quick_Start_Guide.pdf}{CUDA
+Quick Start Guide}.
+
+Remember that \nemo\ can also work in CPU-only mode, and will probably be fast
+enough unless you're doing very large simulations. You can build \nemo\ in
+CPU-only mode by deactivating the \verb@NEMO_CUDA_ENABLED@ option in CMake.
+
+\vspace{5pt}
+\textbf{Q: I made changes to a CMakeLists file, but I keep getting problems:}
+
+\textbf{A:} CMake should automatically update the makefiles in the build
+folder, but depending on where you made your changes it might miss them. To be
+sure, remove all the contents of the build folder and do \command{cmake ..}
+again. To do this from command line, you can run \command{rm -rf build/*} from
+the \nemo\ root folder. But be \emph{very} careful with the \command{rm -rf}
+command!
+
+\vspace{5pt}
+\textbf{Q: I can't find all these CMake options:}
+
+\textbf{A:} The CMake options are in the \verb@CMakeLists.txt@ file in the relevant
+folder for each option. For example, the CMake options concerning the Matlab and
+Python APIs are in the \verb@<NEMO_ROOT>/src/api@ folder. 
+
+If you struggle to locate the options, you can use the CMake GUI to see all the
+options directly and set them on/off with a mouse click. In Linux, install it
+with \command{sudo apt-get install cmake-gui} and then build \nemo with
+\command{cmake-gui ..}
+
+\vspace{5pt}
+\textbf{Q: I want to install NeMo in a local folder:}
+
+\textbf{A:} Installing \nemo\ in a local folder is a good idea when you're
+developing some feature or when you do not have \verb@sudo@ permissions in the
+machine you're working on.
+
+To do this, the first step is to tell CMake where to place the results of the
+build process. Add the following line in the \verb@<NEMO_ROOT>/CMakeLists.txt@
+file, not before the \code{PROJECT} line:
+
+\begin{minted}{cmake}
+SET(CMAKE_INSTALL_PREFIX "/path/to/install_folder")
+\end{minted}
+
+Make sure the folder exists before calling \verb@make@. We strongly recommend
+that you have a dedicated folder for this (and never use the \verb@<NEMO_ROOT>@
+as your install folder). Once the folder exists and you have modified
+\file{CMakeLists.txt} you can run \verb@cmake ..; make; make install@ as usual
+(you might need to clean your build folder). This time \code{make install} will
+copy the include files, libraries and binaries into the folder of your choice,
+instead of the default \verb@/usr/local/share/nemo@.
+
+If you want to use the Python API, look for the \file{setup.py} file inside the
+install folder and run it with a prefix option:
+
+\begin{minted}{bash}
+python setup.py install --prefix=/path/to/pythonAPI
+\end{minted}
+
+Again, make sure the folder exists before running the command. Finally, to make
+Python see your installation, you can set the \verb@PYTHONPATH@ environment
+variable to point at your new installation:
+
+\begin{minted}{bash}
+export PYTHONPATH=/path/to/pythonAPI/lib/python2.7/site-packages
+\end{minted}
+
+You can verify this variable has been set correctly running \verb@echo $PYTHONPATH@.
+Now you should be able to import \nemo in Python from any directory.
+
+If you want to use the C or \cpp bindings you will need to add the location of
+\nemo's header files and libraries to the environment variables \verb@PATH@ and
+\verb@LD_LIBRARY_PATH@, respectively, or specify them manually in each
+invocation to GCC through the \verb@-I@ and \verb@-L@ flags, respectively.
+
+\vspace{5pt}
+\textbf{Q: Python can't find \texttt{\_nemo} when importing the module:}
+
+\textbf{A:} This is a common problem in OSX. The OSX and the Linux formats of
+shared \cpp libraries are the same, but they are named \verb@.dylib@ in OSX and
+\verb@.so@ in Linux. This causes \code{boost::python} to lose track, so that it
+might not be able to find the \library{\_nemo.library} although it's in the
+right place. To fix this, install \nemo and the Python API as usual and then
+locate and rename the \verb@_nemo@ library to give it a \verb@.so@ suffix.
+
+\vspace{5pt}
+\textbf{Q: I get warnings when compiling the Matlab Mex API and NeMo crashes:}
+
+\textbf{A:} This is a rather nasty problem that comes from (A) Matlab being
+proprietary software and (B) Mathworks failing to keep up with recent versions
+of GCC. Matlab's \verb@mex@ functions might crash if compiled with a modern
+GCC. One solution is to manually install an older GCC locally (e.g. like in
+\href{https://gcc.gnu.org/wiki/InstallingGCC}{here}) and setting the CMake
+variables \verb@CMAKE_C_COMPILER@ and \verb@CMAKE_CXX_COMPILER@ to its
+location. You will also have to call \verb@mex@ with the appropriate option
+\verb@mex GCC='/path/to/gcc_binary'@.
+
+This could also be due to the mismatch of preloaded standard libraries in
+Matlab and \nemo. See the comment about preloaded libraries in Section
+\ref{sec:matlab}.
+
+\vspace{5pt}
+\textbf{Q: I want to run NeMo from Octave:}
+
+\textbf{A:} Octave, being the free-software cousin of Matlab, should handle the
+\nemo\ Matlab API smoothly. However, the \command{mex} engines in Matlab and
+Octave differ, and depending on your version of Octave and GCC it might not
+work. We are currently working in ensuring Octave compatibility. Please contact
+the developers if you need an Octave API in your system.
+
+\vspace{5pt}
+\textbf{Q: I want to write my own neuron models:}
+
+\textbf{A:} Easy peasy. There are a few things you have to write:
+
+\begin{enumerate}
+  
+  \item Write the \verb@.ini@ and the \verb@.h@ files that describe the plugin
+  and the number of parameters/state variables it has. Put them in
+  \verb@<NEMO_ROOT>/src/nemo/plugins@.
+
+  \item Write the CPU and/or GPU code of the actual model. Naturally, your
+  model will only be available in the backend for which you write it. Put them
+  in \verb@<NEMO_ROOT>/src/nemo/cpu/plugins@ and/or
+  \verb@<NEMO_ROOT>/src/nemo/cuda/plugins@.
+
+  \item Incorporate it into the normal build process of \nemo by adding it into
+  \verb@<NEMO_ROOT>/src/nemo/plugins/CMakeLists.txt@. Depending on which
+  backend (GPU and/or CPU) you support, you will also have to add it to the
+  \verb@CMakeLists.txt@ file in \verb@<NEMO_ROOT>/src/nemo/cpu/plugins@ and/or
+  \verb@<NEMO_ROOT>/src/nemo/cuda/plugins@.
+
+  \item If you're using the Python API, add it to \verb@add_neuron@ function so
+  that you can parse the parameter and state dictionaries correctly. Remember
+  that order matters, and you should respect the ordering you specified in the
+  \verb@.ini@ and \verb@.h@ files.
+
+  \item Clean the build folder and rebuild \nemo.
+
+\end{enumerate}
+
+The existing plugins should provide a good guidance in writing your own model.
+In all the points specified above, make sure that your plugin fits in nicely as
+the others do, and use some common sense. Specially for your \verb@.cpp@ and/or
+\verb@.cu@ files, we suggest you to copy the \verb@.cpp@ and/or \verb@.cu@ files
+of the most similar existing model and use it as a scafold.
+
+\vspace{5pt}
+\textbf{Q: I get an error about LTDL variables not set:}
+% Andreas says: install libltdl or disable DYNAMIC LOADING.
+
+\textbf{A:} This error occurs when the LTDL library is not installed, not well
+configured or can't be found by \nemo. There are several ways to fix this:
+
+\begin{enumerate}
+
+  \item Install \verb@libltdl@. You can usually install this from the Linux
+  package manager. The name of the package might vary slightly, so search the
+  exact name with \verb@apt-cache search libltdl@ and then install any of them
+  with \verb@sudo apt-get install <PKG_NAME>@.
+
+  \item Build \nemo\ from sources. The CMake script in \nemo\ should download
+  and install LTDL if it can't find it. If the problem persists make sure you
+  have a working internet connection and \nemo\ has the appropriate
+  permissions.
+
+\end{enumerate}
+
+\vspace{5pt}
+\textbf{Q: Boost cries something about \code{STATIC\_ASSERTION\_FAILURE}:}
+
+\textbf{A:} This is a common error in OSX. We don't know of an elegant way
+around this, but it can be fixed by adding the following line in the
+\verb@boost/static_assert.hpp@ file:
+
+\begin{minted}{bash}
+template<> struct STATIC_ASSERTION_FAILURE<false> {enum{value=0};};
+\end{minted}
+
+Somewhere in the file there should be a line with
+\verb@STATIC_ASSERTION_FAILURE<true>@. Insert the line above below this and
+rebuild \nemo. This Boost file is part of a header-only library, so there's no
+need to rebuild Boost (phew).
+
+\vspace{5pt}
+\textbf{Q: I get an error involving ``sm\_12'':}
+
+\textbf{A:} We have observed this problem in certain OSX machines with modern
+GPUs and recent versions of the CUDA Toolkit. It comes from a mismatch between
+the CUDA computing capability when the \nemo\ GPU backend was written and the
+more recent versions. It can be fixed, but we don't have an easy work-around
+for this problem. Please turn off the \verb@NEMO_CUDA_ENABLED@ option to
+disable CUDA or contact the developers.
+
+
+% \subsection{General dependencies}
+
+% Dependencies
+%	\item CUDA toolkit $\geq$ 2.1. The SDK is not required.
+%	\item Boost
+%	\item CMake $\geq$ 2.8
+
+%Note that the CUDA compiler driver \command{nvcc} is not compatible with all versions
+%of \command{gcc}, especially newer versions of \command{gcc}.
+
+%For Boost, mostly header-only libraries are required (\library{shared\_ptr}, \library{tuples},
+%\library{random}, \library{date\_time}), so a full install/build is generally not required. 
+%Note, however, that some versions of Visual \cpp\ require \library{date\_time} to be compiled as
+%a proper library. 
+%The \library{date\_time} library is only required for simulation timing,
+%	and can be disabled in the cmake configuration stage via the \code{INCLUDE\_TIMING\_API} variable.
+
+% \section{Linux/Unix installation}
+
+
+\bibliographystyle{abbrv}
+\bibliography{manual}
+
+\end{document}

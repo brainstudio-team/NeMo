@@ -1,0 +1,84 @@
+#ifndef NEMO_CUDA_RCM_CU_H
+#define NEMO_CUDA_RCM_CU_H
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of NeMo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*! \file rcm.cu_h Reverse connectivity matrix (device functions)
+ *
+ * \see nemo::cuda::runtime::RCM for more details
+ */
+
+#include <cuda_runtime.h>
+#include "types.h"
+
+/*! Synapse in reverse connectivity matrix. */
+typedef uint32_t rsynapse_t;
+
+
+/*! Create a reverse synapse in packed format */
+rsynapse_t make_rsynapse(
+		unsigned sourcePartition,
+		unsigned sourceNeuron,
+		unsigned delay);
+
+const rsynapse_t INVALID_REVERSE_SYNAPSE = ~rsynapse_t(0);
+
+
+/*! Address into the RCM index
+ *
+ * This stores two data relating to a row in the RCM index, i.e. a vector of
+ * warps in the RCM for a particular (target) neuron. The index address stores:
+ *
+ * - the start address of a row (warp-alligned word offset)
+ * - the length (in words)
+ */
+typedef uint2 rcm_index_address_t;
+
+const rcm_index_address_t INVALID_RCM_INDEX_ADDRESS = make_uint2(0, 0);
+
+/*! Entry in the RCM index
+ *
+ * This is simply the offset to a warp in the RCM.
+ */
+typedef unsigned rcm_address_t;
+
+const rcm_address_t INVALID_RCM_ADDRESS = 0;
+
+
+struct rcm_dt {
+
+	rcm_dt() : data(NULL), forward(NULL), accumulator(NULL), weights(NULL),
+		index(NULL), meta_index(NULL) {}
+
+	/*! The raw synapse data is stored in multiple 'fields' all with the same
+	 * layout */
+
+	rsynapse_t* data;     // source partition, source neuron, delay
+	uint32_t* forward;  // word offset into FCM for each synapse
+	weight_dt* accumulator; // accumulated weight difference for STDP
+
+	/* The weights can be stored in reverse format as well, optionally */
+	const float* weights;
+
+	/*! The index data, which is simply rows of RCM warp offsets. The pitch is 32. */
+	const rcm_address_t* index;
+
+	/*! The 'meta-index', mapping from partition/neuron to row start/length in
+	 * the index data. The pitch is partition size. */
+	const rcm_index_address_t* meta_index;
+};
+
+
+/*! \return offset into the RCM index for a specific target neuron */
+__host__ __device__ size_t rcm_metaIndexAddress(pidx_t partition, nidx_t neuron);
+
+
+
+#endif

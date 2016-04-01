@@ -1,0 +1,40 @@
+DEPENDENCIES OF NEMO
+====================
+
+BOOST libraries
+- Boost::date_time (optional)
+- Boost::program_options
+- Boost::filesystem
+- Boost::python
+- Boost::system
+- Boost::mpi
+- Boost::serialization
+
+Other libraries
+- libltdl
+- CMake
+- std
+
+BOOST header-only
+- Boost::format
+- Boost::optional
+- Boost::smart_ptr
+- Boost::unordered_map
+- Boost::test::unit_test
+- Boost::scoped_ptr
+- Boost::random
+- Boost::archive
+- Boost::math::special_functions::fpclassify
+- Boost::numeric::conversion::cast
+- Boost::bimap
+- Boost::tuple
+- Boost::shared_array
+- Boost::functional::hash
+- Boost::utility
+- Boost::multi_array
+
+
+For information on Boost libraries, see 
+
+http://www.boost.org/doc/libs/1_57_0/more/getting_started/unix-variants.html#header-only-libraries
+

@@ -1,0 +1,159 @@
+.Dd March 22, 2010
+.Dt NEMO(3) "" "NeMo Reference Manual"
+.Os POSIX
+.Sh NAME
+.Nm NeMo
+.Nd Parallel spiking neural network simulator
+
+.Sh OVERVIEW
+NeMo is a library for discrete-time simulation of spiking neural networks.
+It runs simulations on CUDA-enabled GPUs (device generation >= 1.2).
+NeMo is a C++ class library, but comes with APIs for C, Python, and Matlab.
+
+.Sh USAGE
+Both the C and C++ interfaces have the same usage pattern,
+with API commands falling into one of three groups:
+	configuration,
+	construction, and
+	simulation.
+These should be called in a fixed order:
+
+.Bl -enum -compact
+.It
+Create a global configuration object and set parameters as appropriate;
+.It
+Create a network and populate it with neurons and synapses; and
+.It
+Create a simulation from the network and configuration and run it
+.El
+
+For details of the API look at the relevant man pages (nemo-c(3) and nemo-cpp(3)).
+
+.Sh SIMULATION MODEL
+The simulation is discrete-time with a fixed one millisecond step size.
+Neurons are based on the Izhikevich neuron model.
+Within each step the following actions take place in a fixed order:
+
+.Bl -enum -compact
+.It
+Compute accumulated current for incoming spikes;
+.It
+Update the neuron state;
+.It
+Determine if any neurons fired.
+The user can specify neurons which should be forced to fire at this point;
+.It
+Update the state of the fired neurons
+.It
+Accumulate STDP statistics, if STDP is enabled
+.El
+
+The state update step uses the Euler method with a step size of 0.25ms. 
+
+The weights are stored in a Q10.21 fixed-point format internally for performance reasons.
+The current accumulation uses saturating arithmetic to avoid overflow.
+Neuron parameters are stored in single-precision floating point.
+
+.Sh STDP MODEL
+NeMo supports spike-timing dependant plasticity,
+i.e. synapses can change during simulation depending on the temporal relationship 
+between the firing of the pre- and post-synaptic neurons. 
+To make use of STDP the user must first enable STDP globally by specifying an STDP function,
+and then enable plasticity for each synapse as appropriate.
+Currently a single STDP function is applied to the whole network.
+
+Synapses can be either potentiated or depressed.
+With STDP enabled,
+the simulation accumulates a weight change, 
+which is the sum of potentiation and depression for each synapse. 
+Potentiation always moves the synaptic weight away from zero,
+which for excitatory synapses is more positive,
+and for inhibitory synapses is more negative.
+Depression always moves the synapses weight towards zero.
+The accumulation of potentiation and depression statistics takes place every cycle,
+but the modification of the weight only takes place when explicitly requested.
+
+Generally a synapse is potentiated if a spike arrives shortly before the
+postsynaptic neuron fires. 
+Conversely,
+if a spike arrives shortly after the postsynaptic firing the synapse is depressed. 
+Also, the effect of either potentiation or depression generally weakens as the time difference, 
+.Em dt ,
+between spike arrival and firing increases. 
+Beyond certain values of 
+.Em dt
+before or after the firing, STDP has no effect. 
+These limits for
+.Em dt
+specify the size of the STDP window.
+
+The user can specify the following aspects of the STDP function:
+
+.Bl -bullet -compact
+.It
+the size of the STDP window;
+.It
+what values of
+.Em dt
+cause potentiation and which cause depression;
+.It
+the strength of either potentiation or depression for each value of 
+.Em dt , 
+i.e. the shape of the STDP function;
+.It
+maximum weight of plastic excitatory synapses; and
+.It
+minimum weight of plastic inhibitory synapses.
+.El
+
+Since the simulation is discrete-time,
+the STDP function can be specified by providing values of the underlying function
+sampled at integer values of
+.Em dt .
+For any value of
+.Em dt ,
+a positive value of the function denotes potentiation, 
+while a negative value denotes depression.
+The STDP function is described using two vectors: 
+one for spike arrivals
+.Em before
+the postsynaptic firing (pre-post pair), and
+one for spike arrivals 
+.Em after
+the postsynaptic firing (post-pre pair).
+The total length of these two vectors is the size of the STDP window.
+The typical scheme is to have positive values for pre-post pairs and negative values for post-pre pairs,
+but other schemes can be used.
+
+When accumulating statistics a pairwise nearest-neighbour protocol is used.
+For each postsynaptic firing potentiation and depression statistics are updated based
+on the nearest pre-post spike pair (if any inside STDP window) 
+and the nearest post-pre spike pair (if any inside the STDP window).
+
+
+Excitatory synapses are never potentiated beyond the user-specified maximum weight,
+and are never depressed below zero.
+Likewise, inhibitory synapses are never potentiated beyond the  user-specified minimum weight,
+and are never depressed above zero.
+Synapses can thus be deactivated, but never change from excitatory to inhibitory or vice versa.
+
+
+
+.Sh SEE ALSO
+
+.Bl -bullet -compact
+.It
+nemo-c(3) for C API
+.It
+nemo_Network(3), nemo_Configuration(3), and nemo_Simulation(3) for C++ API
+.It
+"NeMo user manual" for more details on the simulator
+.It
+E. M. Izhikevich "Simple model of spiking neurons",
+.Em IEEE Trans. Neural Networks ,
+vol 14, pp 1569-1572, 2003, for a full description of the model and the parameters.
+.El
+
+.Sh AUTHOR
+Andreas K. Fidjeland <andreas.fidjeland@imperial.ac.uk>,
+Imperial College London, Department of Computing

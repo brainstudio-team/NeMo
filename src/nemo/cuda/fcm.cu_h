@@ -1,0 +1,22 @@
+#ifndef NEMO_CUDA_FCM_CU_H
+#define NEMO_CUDA_FCM_CU_H
+
+/* Copyright 2010 Imperial College London
+ *
+ * This file is part of nemo.
+ *
+ * This software is licenced for non-commercial academic use under the GNU
+ * General Public Licence (GPL). You should have received a copy of this
+ * licence along with nemo. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "types.h"
+
+// planes of forward connectivity matrix
+#define FCM_ADDRESS 0        // target partition and neuron
+#define FCM_WEIGHT 1         // float packed as int
+#define FCM_SUBMATRICES 2
+
+const synapse_t INVALID_FORWARD_SYNAPSE = 0;
+
+#endif

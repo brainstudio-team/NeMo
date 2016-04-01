@@ -1,0 +1,7 @@
+\title{\nemo\ user manual}
+\author{
+% Andreas K.~Fidjeland $\langle$\href{mailto:andreas.fidjeland@imperial.ac.uk}{\nolinkurl{andreas.fidjeland@imperial.ac.uk}}$\rangle$~\\
+Andreas K.~Fidjeland~\\
+Pedro A.M.~Mediano $\langle$\href{mailto:pmediano@imperial.ac.uk}{\nolinkurl{pmediano@imperial.ac.uk}}$\rangle$
+}
+\date{\today\hspace{1em}Version @NEMO_VERSION@}
