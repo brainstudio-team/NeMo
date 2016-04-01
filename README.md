@@ -31,12 +31,8 @@ found on the mailing list. Sign up to the list at
 
 	https://lists.sourceforge.net/lists/listinfo/nemosim-user
 
-NeMo is written by
+### Credits
 
-Andreas K. Fidjeland <andreas.fidjeland@imperial.ac.uk>
-Imperial College London
-Department of Computing
-180 Queen's Gate
-London SW7 2AZ
-
-August 2011
+NeMo was originally written by Andreas K. Fidjeland but it now 
+maintained by the [Computational Neurodynamics group](http://neurodynamics.doc.ic.ac.uk/), of
+[Imperial College London](www.imperial.ac.uk).
