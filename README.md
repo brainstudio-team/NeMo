@@ -33,6 +33,6 @@ found on the mailing list. Sign up to the list at
 
 ### Credits
 
-NeMo was originally written by Andreas K. Fidjeland but it now 
-maintained by the [Computational Neurodynamics group](http://neurodynamics.doc.ic.ac.uk/), of
-[Imperial College London](www.imperial.ac.uk).
+NeMo was originally written by Andreas K. Fidjeland but it is now 
+maintained by the [Computational Neurodynamics group](http://neurodynamics.doc.ic.ac.uk/ "Group's homepage"), of
+[Imperial College London](www.imperial.ac.uk "College's homepage").
