@@ -9,10 +9,10 @@ IF(CUDA_BUILD_EMULATION)
 	ADD_DEFINITIONS(-D__DEVICE_EMULATION__)
 ENDIF()
 
-SET(NEMO_CUDA_DEVICE_MAJOR "1"
-	CACHE STRING "Major device generation number for CUDA code generation. Default=1")
-SET(NEMO_CUDA_DEVICE_MINOR "2"
-	CACHE STRING "Minor device generation number for CUDA code generation. Default=2")
+SET(NEMO_CUDA_DEVICE_MAJOR "3"
+	CACHE STRING "Major device generation number for CUDA code generation. Default=3")
+SET(NEMO_CUDA_DEVICE_MINOR "0"
+	CACHE STRING "Minor device generation number for CUDA code generation. Default=0")
 
 IF(NEMO_CUDA_DEVICE_MAJOR EQUAL 1 AND NEMO_CUDA_DEVICE_MINOR LESS 2)
 	# The 1.2 minimum is because of the need for shared memory atomics
