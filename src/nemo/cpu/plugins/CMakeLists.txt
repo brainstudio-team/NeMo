@@ -13,6 +13,7 @@ ENDFUNCTION(PLUGIN)
 
 PLUGIN(Input)
 PLUGIN(PoissonSource)
+PLUGIN(BayesianNeuron)
 PLUGIN(InhomogeneousPoissonSource)
 PLUGIN(Izhikevich)
 PLUGIN(Izhikevich2007DopSyn)

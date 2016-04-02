@@ -121,6 +121,10 @@ class Network():
         elif self.includedTypes[neuron_type] == 'PoissonSource':
             self._net.add_neuron(neuron_type, neuron_idx, paramDict['lambda'])
 
+        elif self.includedTypes[neuron_type] == 'BayesianNeuron':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['rOn'], paramDict['rOff'], \
+                    paramDict['g0'], stateDict['L'], stateDict['G'])
+
         elif self.includedTypes[neuron_type] == 'Kuramoto':
             self._net.add_neuron(neuron_type, neuron_idx, paramDict['omega'], paramDict['Cmean'], stateDict['theta'])
 

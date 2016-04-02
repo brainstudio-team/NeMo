@@ -1,5 +1,6 @@
 INSTALL(FILES
         Input.ini
+        BayesianNeuron.ini
         PoissonSource.ini
         InhomogeneousPoissonSource.ini
         Izhikevich.ini
