@@ -495,7 +495,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(mapping_tests_random)
 {
 	// only need to create the network once
-	boost::scoped_ptr<nemo::Network> net(nemo::random::construct(1000, 1000, 1, true));
+	boost::scoped_ptr<nemo::Network> net(nemo::random::constructUniformRandom(1000, 1000, 1, true));
 	runComparisions(net.get());
 }
 #endif
