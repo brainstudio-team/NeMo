@@ -11,5 +11,6 @@ INSTALL(FILES
         HH.ini
         IzhikevichChaos.ini
         Izhikevich2007DopSyn.ini
+        IzhikevichSyn.ini
         Izhikevich2007.ini
 	DESTINATION ${NEMO_SYSTEM_PLUGIN_DIR})

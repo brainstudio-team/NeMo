@@ -101,6 +101,13 @@ class Network():
                     paramDict['tMdtOt_inh'], paramDict['G_inh'], paramDict['E_inh'], \
                     stateDict['v'], stateDict['u'], stateDict['ge'], stateDict['gi'])
 
+        elif self.includedTypes[neuron_type] == 'IzhikevichSyn':
+            self._net.add_neuron(neuron_type, neuron_idx, paramDict['a'], paramDict['b'], paramDict['c'], \
+                    paramDict['d'], paramDict['vpeak'], paramDict['sigma'], \
+                    paramDict['tMdtOt_exc'], paramDict['G_exc'], paramDict['E_exc'], \
+                    paramDict['tMdtOt_inh'], paramDict['G_inh'], paramDict['E_inh'], \
+                    stateDict['v'], stateDict['u'], stateDict['ge'], stateDict['gi'])
+
         elif self.includedTypes[neuron_type] == 'Izhikevich2007':
             self._net.add_neuron(neuron_type, neuron_idx, paramDict['a'], paramDict['b'], paramDict['c'], \
                     paramDict['d'], paramDict['vpeak'], paramDict['Vr'], paramDict['Vt'], paramDict['k'], \
