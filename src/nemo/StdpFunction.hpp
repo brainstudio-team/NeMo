@@ -11,6 +11,7 @@
  */
 
 #include <vector>
+#include <ostream>
 
 #include <nemo/config.h>
 #include <nemo/internal_types.h>
@@ -108,6 +109,9 @@ class NEMO_BASE_DLL_PUBLIC StdpFunction
 		}
 #endif
 };
+
+NEMO_BASE_DLL_PUBLIC
+std::ostream& operator<<(std::ostream& o, nemo::StdpFunction const& conf);
 
 }
 
