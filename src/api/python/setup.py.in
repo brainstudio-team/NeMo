@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(  name='NeMo',
         description='Spiking neural network simulator',
@@ -17,6 +17,7 @@ must be installed for the simulator to work.
         platforms=['Linux', 'Windows', 'OSX'],
         license='GPLv2',
         packages=['nemo'],
+        package_dir={'nemo': '@PROJECT_SOURCE_DIR@/src/api/python'}
         # There is an extension module here, but the shared library itself is
         # stored in a NeMo-specific directory to which the __init__ script sets
         # the path.

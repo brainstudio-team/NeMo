@@ -18,7 +18,7 @@ More details can be found in the documentation for each of these classes.
 
 The following example shows how a small network of 1000 neurons is created and
 simulated for one second::
-    
+
     import nemo
     import random
 
@@ -61,9 +61,6 @@ elsewhere.
 import sys
 import warnings
 
-__nemo_path__ = '@CMAKE_INSTALL_PREFIX@'
-
-sys.path.append('@CMAKE_INSTALL_PREFIX@/@INSTALL_DIR@')
 # from _nemo import *
 
 # TODO: Is init() necesary?

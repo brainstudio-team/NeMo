@@ -1,8 +1,6 @@
 import sys
 import warnings
 
-sys.path.append('@CMAKE_INSTALL_PREFIX@/@INSTALL_DIR@')
-# from _nemo import *
 import _nemo as _n
 
 _n.init()
@@ -21,7 +19,7 @@ def deprecated(func):
     return new_func
 
 
-	
+
 
 # _n.Simulation.step = step
 
@@ -29,7 +27,7 @@ def deprecated(func):
 class Configuration:
 
     def __init__(self):
-        self._conf = _n.Configuration() 
+        self._conf = _n.Configuration()
 
     def set_stdp_function(self, prefire, postfire, minWeight, maxWeight):
         return self._conf.set_stdp_function(prefire, postfire, minWeight, maxWeight)
@@ -66,7 +64,7 @@ class Network():
             else:
                 res = self._net.add_neuron_type(name)
                 self.includedTypes[res] = name
-                self.includedTypes[name] = res	
+                self.includedTypes[name] = res
 
         return res
 
@@ -84,7 +82,7 @@ class Network():
         try:
             if neuron_type not in self.includedTypes:
                 raise RuntimeError('That neuron type is not in this network. Use add_neuron_type first.')
-                    
+
         except AttributeError:
             raise RuntimeError('No neuron types in this network. Use add_neuron_type first.')
 
@@ -226,7 +224,7 @@ class Simulation:
     def step_f(self, fstim):
         """
         run simulation for a single cycle (1ms)
-    
+
         Inputs:
         fstim -- An optional list of neurons which will be forced to fire this cycle
         """
@@ -235,7 +233,7 @@ class Simulation:
     def step_i(self, istim):
         """
         run simulation for a single cycle (1ms)
-    
+
         Inputs:
         istim -- An optional list of neuron index/current pairs (tuples) for external stimulus of the network
         """
@@ -244,7 +242,7 @@ class Simulation:
     def step_fi(self, fstim, istim):
         """
         run simulation for a single cycle (1ms)
-    
+
         Inputs:
         fstim -- An optional list of neurons which will be forced to fire this cycle
         istim -- An optional list of neuron index/current pairs (tuples) for external stimulus of the network
@@ -254,7 +252,7 @@ class Simulation:
     def step(self, fstim=None, istim=None):
         """
         run simulation for a single cycle (1ms)
-    
+
         Inputs:
         fstim -- An optional list of neurons which will be forced to fire this cycle
         istim -- An optional list of neuron index/current pairs (tuples) for external stimulus of the network
@@ -277,7 +275,7 @@ class Simulation:
             else:
                 return self._sim.step_noinput()
 
-    
+
     def propagate(self, *args, **kwargs):
         return self._sim.propagate(*args, **kwargs)
 
@@ -292,10 +290,10 @@ class Simulation:
 
     def get_neuron_parameter(self, idx, varno):
         return self._sim.get_neuron_parameter(idx, varno)
-    
+
     def set_neuron_state(self, idx, varno, val):
         return self._sim.set_neuron_state(idx, varno, val)
-    
+
     def set_neuron_parameter(self, idx, varno, val):
         return self._sim.set_neuron_parameter(idx, varno, val)
 
@@ -304,19 +302,19 @@ class Simulation:
 
     def get_synapses_from(self, source):
         return self._sim.get_synapses_from(source)
-    
+
     def get_synapse_source(self, synapse):
         return self._sim.get_synapse_source(synapse)
-    
+
     def get_synapse_target(self, synapse):
         return self._sim.get_synapse_target(synapse)
-    
+
     def get_synapse_delay(self, synapse):
         return self._sim.get_synapse_delay(synapse)
-    
+
     def get_synapse_weight(self, synapse):
         return self._sim.get_synapse_weight(synapse)
-    
+
     def get_synapse_plastic(self, synapse):
         return self._sim.get_synapse_plastic(synapse)
 
