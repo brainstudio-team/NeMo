@@ -107,4 +107,16 @@ StdpFunction::depressionBits() const
 	return getBits(depression);
 }
 
+std::ostream& operator<<(std::ostream& o, nemo::StdpFunction const& fn)
+{
+	return o
+		<< "StdpFunction("
+		<< "minExc:" << fn.minExcitatoryWeight()
+		<< ",maxExc:" << fn.maxExcitatoryWeight()
+		<< ",minInh:" << fn.minInhibitoryWeight()
+		<< ",maxInh:" << fn.maxInhibitoryWeight()
+		<< ")";
 }
+
+}
+
