@@ -42,17 +42,17 @@ cpu_update_neurons(
 	const float* m0 = stateBase + b0 * stateHistoryStride + STATE_M * stateVarStride;
 	const float* h0 = stateBase + b0 * stateHistoryStride + STATE_H * stateVarStride;
 	const float* dir0 = stateBase + b0 * stateHistoryStride + STATE_DIR * stateVarStride;
-	
+
 
 	/* Next state */
 	size_t b1 = (cycle+1) % historyLength;
 
 	float* v1 = stateBase + b1 * stateHistoryStride + STATE_V * stateVarStride;
-	float* n1 = stateBase + b1 * stateHistoryStride + STATE_N * stateVarStride;	
-	float* m1 = stateBase + b1 * stateHistoryStride + STATE_M * stateVarStride;	
-	float* h1 = stateBase + b1 * stateHistoryStride + STATE_H * stateVarStride;	
+	float* n1 = stateBase + b1 * stateHistoryStride + STATE_N * stateVarStride;
+	float* m1 = stateBase + b1 * stateHistoryStride + STATE_M * stateVarStride;
+	float* h1 = stateBase + b1 * stateHistoryStride + STATE_H * stateVarStride;
 	float* dir1 = stateBase + b1 * stateHistoryStride + STATE_DIR * stateVarStride;
-	
+
 	float dt = 0.001f; // Simulation time increment
 	float gNa = 120.0f;
 	float gK = 36.0f;
@@ -63,7 +63,7 @@ cpu_update_neurons(
 	float C = 1.0f;
 	float RevE = 0.0f;
 	float RevI = -70.0f;
-	int inc_max= (int)(1/dt);
+	unsigned int inc_max= (unsigned int)(1/dt);
 
 	for(unsigned int nn=start; nn < end; ++nn) {
 
@@ -73,11 +73,11 @@ cpu_update_neurons(
 		float h = h0[nn];
 		float dir = dir0[nn];
 
-		
+
 		float Excit = currentEPSP[nn];
 		float Inhib = currentIPSP[nn];
  		float Exter = currentExternal[nn];
-		
+
 		/* no need to clear current?PSP. */
 
 		//! \todo clear this outside kernel
@@ -88,7 +88,7 @@ cpu_update_neurons(
 
 			float I = (Excit*(RevE-v)) + (Inhib*((RevI-v)/-1)) + Exter;
 
-		    
+
 			float alphan = (0.1f-0.01f*(v+65.0f))/(exp(1.0f-0.1f*(v+65.0f))-1.0f);
 			float alpham = (2.5f-0.1f*(v+65.0f))/(exp(2.5f-0.1f*(v+65.0f))-1.0f);
 			float alphah = 0.07f*exp(-(v+65.0f)/20.0f);
@@ -108,16 +108,16 @@ cpu_update_neurons(
 			float newv = v + dt*(-Ik+I)/C;
 
 			float new_dir = (newv-v);
-			float change = dir<0 | newv<-45 ? 0 : new_dir;
+			float change = (dir<0 || newv<-45) ? 0 : new_dir;
 			dir = new_dir;
 
-		
+
 			if(!fired[nn] && cycle >= 10)
 				fired[nn] = change < -0.000000001;
-				
+
 			v=newv;
 
-			
+
 		}
 
 		fired[nn] |= fstim[nn];
@@ -132,8 +132,8 @@ cpu_update_neurons(
 		n1[nn] = n;
 		m1[nn] = m;
 		h1[nn] = h;
-		dir1[nn] = dir;	
-		
+		dir1[nn] = dir;
+
 	}
 }
 
