@@ -81,13 +81,44 @@ ADD_LIBRARY(nemo_base
 TARGET_LINK_LIBRARIES(nemo_base ${LTDL_LIBRARY} ${Boost_LIBRARIES})
 SET_TARGET_PROPERTIES(nemo_base PROPERTIES DEFINE_SYMBOL NEMO_BASE_EXPORTS)
 
+ADD_LIBRARY(nemo_base_a STATIC
+	Axon.cpp
+	ConfigurationImpl.cpp
+	ConnectivityMatrix.cpp
+	FiringBuffer.cpp
+	fixedpoint.cpp
+	Network.cpp
+	NetworkImpl.cpp
+	Neuron.cpp
+	Neurons.cpp
+	NeuronType.cpp
+	Simulation.cpp
+	SimulationBackend.cpp
+	OutgoingDelays.cpp
+	Plugin.cpp
+	ReadableNetwork.cpp
+	RNG.cpp
+	runtime/RCM.cpp
+	StdpFunction.cpp
+	StdpProcess.cpp
+)
+
+TARGET_LINK_LIBRARIES(nemo_base_a ${LTDL_LIBRARY} ${Boost_LIBRARIES})
+SET_TARGET_PROPERTIES(nemo_base_a PROPERTIES DEFINE_SYMBOL NEMO_BASE_EXPORTS)
+
 
 ADD_LIBRARY(nemo nemo.cpp nemo_c.cpp Configuration.cpp)
 SET_TARGET_PROPERTIES(nemo PROPERTIES DEFINE_SYMBOL NEMO_EXPORTS)
 TARGET_LINK_LIBRARIES(nemo nemo_base ${BACKEND_LIBS})
 
-
 INSTALL(TARGETS nemo nemo_base DESTINATION ${INSTALL_LIB_DIR})
+
+
+ADD_LIBRARY(nemo_a STATIC nemo.cpp nemo_c.cpp Configuration.cpp)
+SET_TARGET_PROPERTIES(nemo_a PROPERTIES DEFINE_SYMBOL NEMO_EXPORTS)
+TARGET_LINK_LIBRARIES(nemo_a nemo_base_a ${BACKEND_LIBS})
+
+INSTALL(TARGETS nemo_a nemo_base_a DESTINATION ${INSTALL_LIB_DIR})
 
 INSTALL(FILES
 		exception.hpp
