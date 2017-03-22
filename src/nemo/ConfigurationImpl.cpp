@@ -123,7 +123,7 @@ ConfigurationImpl::verifyStdp(unsigned d_max) const
 std::ostream& operator<<(std::ostream& o, nemo::ConfigurationImpl const& conf)
 {
 	return o
-		<< "STDP: " << conf.stdpFunction() << ", "
+		<< "STDP: " << &conf.stdpFunction() << ", "
 		<< "cuda_ps: " << conf.cudaPartitionSize() << ", "
 		<< "device: " << conf.backendDescription();
 	//! \todo print more info about STDP
