@@ -142,7 +142,7 @@ struct from_py_list_of_pairs
 			PyObject* pair = PyList_GetItem(list, i);
 			PyObject* first = PyTuple_GetItem(pair, 0);
 			PyObject* second = PyTuple_GetItem(pair, 1);
-			vec[i] = std::make_pair<T1, T2>(extract<T1>(first), extract<T2>(second));
+			vec[i] = std::make_pair<T1, T2>(extract<T1>(first)(), extract<T2>(second)());
 		}
 	}
 };
