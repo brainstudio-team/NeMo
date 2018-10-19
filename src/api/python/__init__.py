@@ -61,6 +61,7 @@ elsewhere.
 import sys
 import warnings
 
+
 # from _nemo import *
 
 # TODO: Is init() necesary?
@@ -88,4 +89,9 @@ def deprecated(func):
     return new_func
 
 __version__ = '@NEMO_VERSION@'
+__nemo_path__='@CMAKE_INSTALL_PREFIX@/@INSTALL_DIR@'
+
+"""The above replacements are not working so hard coding 
+	path need for Brain-Studio below."""
+__nemo_path__='/usr/local'
 __all__ = ['Network', 'Simulation', 'Configuration']
