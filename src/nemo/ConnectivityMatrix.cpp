@@ -244,7 +244,7 @@ ConnectivityMatrix::accumulateStdp(const std::vector<uint64_t>& recentFiring)
 				const RSynapse* rdata_ptr = m_rcm->data(*wi);
 				fix_t* accumulator = m_rcm->accumulator(*wi);
 
-				for(unsigned s=0; s < m_rcm->WIDTH && remaining--; s++) {
+				for(int s=0; s < m_rcm->WIDTH && remaining--; s++) {
 					const RSynapse& rdata = rdata_ptr[s];
 					uint64_t preFiring = recentFiring[rdata.source] >> rdata.delay;
 					fix_t w_diff = m_stdp->weightChange(preFiring, rdata.source, target);
@@ -303,7 +303,7 @@ ConnectivityMatrix::applyStdp(float reward)
 			const uint32_t* forward = m_rcm->forward(*wi);
 			fix_t* accumulator = m_rcm->accumulator(*wi);
 
-			for(unsigned s=0; s < m_rcm->WIDTH && remaining--; s++) {
+			for(int s=0; s < m_rcm->WIDTH && remaining--; s++) {
 
 				const RSynapse& rsynapse = rdata_ptr[s];
 				fix_t* w_old = weight(rsynapse, forward[s]);
